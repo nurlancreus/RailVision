@@ -1,0 +1,11 @@
+@RailVision.WebAPI_HostAddress = https://localhost:7060
+
+GET {{RailVision.WebAPI_HostAddress}}/api/railways/
+Accept: application/json
+
+###
+
+GET {{RailVision.WebAPI_HostAddress}}/api/railways/lines
+Accept: application/json
+
+###

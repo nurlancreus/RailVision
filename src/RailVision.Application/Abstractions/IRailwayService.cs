@@ -1,6 +1,5 @@
 ﻿using RailVision.Application.DTOs.Overpass;
-using RailVision.Application.DTOs.Railways;
-using System.Threading.Tasks;
+using RailVision.Application.DTOs;
 
 namespace RailVision.Application.Abstractions
 {

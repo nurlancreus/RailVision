@@ -5,19 +5,26 @@ using System.Net.Mime;
 
 namespace RailVision.WebAPI
 {
-    public class CustomExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
+    public class CustomExceptionHandler(IProblemDetailsService problemDetailsService, ILogger<CustomExceptionHandler> logger) : IExceptionHandler
     {
+        private readonly IProblemDetailsService _problemDetailsService = problemDetailsService;
+        private readonly ILogger<CustomExceptionHandler> _logger = logger;
+
         public async ValueTask<bool> TryHandleAsync(
             HttpContext httpContext,
             Exception exception,
             CancellationToken cancellationToken)
         {
+            _logger.LogError(exception, "An unhandled exception occurred while processing the request.");
+
             var problemDetails = GenerateProblemDetails(exception, httpContext);
 
             httpContext.Response.ContentType = MediaTypeNames.Application.Json;
             httpContext.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
 
-            await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
+            _logger.LogInformation("Responding with status code {StatusCode} for exception of type {ExceptionType}.", problemDetails.Status, exception.GetType().Name);
+
+            await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
             {
                 Exception = exception,
                 HttpContext = httpContext,
@@ -37,7 +44,6 @@ namespace RailVision.WebAPI
                 Detail = exception.Message,
                 Instance = $"{httpContext.Request.Method} {httpContext.Request.Path}"
             };
-
 
             statusCode = exception switch
             {

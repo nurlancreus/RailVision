@@ -1,11 +1,39 @@
 @RailVision.WebAPI_HostAddress = https://localhost:7060
 
-GET {{RailVision.WebAPI_HostAddress}}/api/railways/
+### Railways ENDPOINTS
+GET {{RailVision.WebAPI_HostAddress}}/api/railways/data
 Accept: application/json
 
 ###
 
 GET {{RailVision.WebAPI_HostAddress}}/api/railways/lines
 Accept: application/json
+
+###
+
+### Stations ENDPOINTS
+GET {{RailVision.WebAPI_HostAddress}}/api/stations/data
+Accept: application/json
+
+###
+
+GET {{RailVision.WebAPI_HostAddress}}/api/stations/
+Accept: application/json
+
+###
+
+GET {{RailVision.WebAPI_HostAddress}}/api/stations/coords
+Accept: application/json
+
+###
+
+### Routes ENDPOINTS
+POST {{RailVision.WebAPI_HostAddress}}/api/routes/
+Content-Type: application/json
+
+{
+  "FromStationId": "670217100",
+  "ToStationId": "1930089762"
+}
 
 ###

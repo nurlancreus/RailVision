@@ -1,4 +1,6 @@
 
+using Microsoft.EntityFrameworkCore;
+using RailVision.Infrastructure.Persistence;
 using RailVision.WebAPI.Configurations;
 using RailVision.WebAPI.Endpoints;
 
@@ -13,9 +15,12 @@ namespace RailVision.WebAPI
             builder.RegisterServices();
 
             var app = builder.Build();
-            app.UseMiddlewares();
 
-            app.RegisterRailwaysEndpoints();
+            app.UseMiddlewares(builder);
+
+            app.RegisterRailwaysEndpoints()
+               .RegisterStationsEndpoints()
+               .RegisterRoutesEndpoints();
 
             app.Run();
         }

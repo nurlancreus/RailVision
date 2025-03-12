@@ -8,7 +8,7 @@ namespace RailVision.WebAPI.Endpoints
         {
             var railways = routes.MapGroup("api/railways");
 
-            railways.MapGet("", async (IRailwayService railwayService, CancellationToken cancellationToken) =>
+            railways.MapGet("data", async (IRailwayService railwayService, CancellationToken cancellationToken) =>
             {
                 var response = await railwayService.GetRailwayDataAsync(cancellationToken);
 

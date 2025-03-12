@@ -1,5 +1,8 @@
 ﻿using RailVision.Application.Abstractions;
+using RailVision.Infrastructure.Persistence;
 using RailVision.Infrastructure.Services;
+using RailVision.Infrastructure.Services.Background;
+using Serilog;
 
 namespace RailVision.WebAPI.Configurations
 {
@@ -27,13 +30,21 @@ namespace RailVision.WebAPI.Configurations
             builder
                 .ConfigureCORS()
                 .ConfigureDbContext()
-                .ConfigureRateLimiter();
+                .ConfigureRateLimiter()
+                .ConfigureSeriLog();
+
+            //Registering the Background service
+            builder.Services.AddHostedService<LogCleanupService>();
 
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
             #region Register App Services
+            builder.Services.AddScoped<IOverpassApiService, OverpassApiService>();
+
             builder.Services.AddScoped<IRailwayService, RailwayService>();
+            builder.Services.AddScoped<IStationService, StationService>();
+            builder.Services.AddScoped<IRouteService, RouteService>();
             #endregion
 
             #region Exception Handling
@@ -45,23 +56,30 @@ namespace RailVision.WebAPI.Configurations
             #endregion
         }
 
-        public static void UseMiddlewares(this WebApplication app)
+        public static void UseMiddlewares(this WebApplication app, WebApplicationBuilder builder)
         {
             app.UseExceptionHandler();
-
             app.UseStatusCodePages();
 
             app.UseCors(Constants.CorsPolicies.AllowAllPolicy);
-
             app.UseRateLimiter();
 
-            // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
             }
 
+            app.UseSerilogRequestLogging();
+
+            bool isDbAvailable = AppDbContext.CheckDatabaseAvailability(builder.Configuration);
+
+            if (isDbAvailable) app.UseHttpLogging();
+
             app.UseHttpsRedirection();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
         }
+
     }
 }

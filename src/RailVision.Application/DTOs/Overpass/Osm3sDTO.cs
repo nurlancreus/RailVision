@@ -9,8 +9,6 @@ namespace RailVision.Application.DTOs.Overpass
 
         [JsonPropertyName("timestamp_areas_base")]
         public string TimestampAreasBase { get; set; } = string.Empty;
-
-        [JsonPropertyName("copyright")]
         public string Copyright { get; set; } = string.Empty;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace RailVision.Application.DTOs.Railways
+﻿namespace RailVision.Application.DTOs
 {
     public record RailwayLineDTO
     {

@@ -12,7 +12,6 @@ namespace RailVision.WebAPI.Configurations
         public static WebApplicationBuilder ConfigureSeriLog(this WebApplicationBuilder builder)
         {
             bool isDbAvailable = AppDbContext.CheckDatabaseAvailability(builder.Configuration);
-            // Set up Serilog programmatically using fluent configuration
             builder.Host.UseSerilog((context, services, configuration) =>
             {
 
@@ -53,7 +52,7 @@ namespace RailVision.WebAPI.Configurations
                 }
             });
 
-            if(isDbAvailable)
+            if (isDbAvailable)
             {
                 builder.Services.AddHttpLogging(logging =>
                 {

@@ -1,4 +1,6 @@
-﻿using RailVision.Application.Abstractions;
+﻿using Microsoft.AspNetCore.ResponseCompression;
+using RailVision.Application.Abstractions;
+using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Infrastructure.Persistence;
 using RailVision.Infrastructure.Services;
 using RailVision.Infrastructure.Services.Background;
@@ -12,10 +14,31 @@ namespace RailVision.WebAPI.Configurations
         {
             builder.Configuration.ConfigureEnvironments<Program>(builder.Environment);
 
-            // Registering HttpClient with a custom timeout
+            // Registering HttpClient with a custom timeout and Automatic GZIP Handling
             builder.Services.AddHttpClient("OverpassClient", client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(30);
+                client.Timeout = TimeSpan.FromMinutes(1);
+            })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
+            });
+
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true; // Compress HTTPS responses
+                options.Providers.Add<GzipCompressionProvider>();
+                // You can also add Brotli: options.Providers.Add<BrotliCompressionProvider>();
+
+                options.MimeTypes =
+                [
+                    "application/json",
+                ];
+            });
+
+            builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = System.IO.Compression.CompressionLevel.Optimal;
             });
 
             // Add services to the container.
@@ -30,8 +53,8 @@ namespace RailVision.WebAPI.Configurations
             builder
                 .ConfigureCORS()
                 .ConfigureDbContext()
-                .ConfigureRateLimiter()
-                .ConfigureSeriLog();
+                .ConfigureSeriLog()
+                .ConfigureRateLimiter();
 
             //Registering the Background service
             builder.Services.AddHostedService<LogCleanupService>();
@@ -40,10 +63,14 @@ namespace RailVision.WebAPI.Configurations
             builder.Services.AddOpenApi();
 
             #region Register App Services
+            builder.Services.AddScoped<IStationsOverpassApiService, OverpassApiService>();
+            builder.Services.AddScoped<IRailwaysOverpassApiService, OverpassApiService>();
+            builder.Services.AddScoped<ITerrainsOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<IOverpassApiService, OverpassApiService>();
 
             builder.Services.AddScoped<IRailwayService, RailwayService>();
             builder.Services.AddScoped<IStationService, StationService>();
+            builder.Services.AddScoped<ITerrainService, TerrainService>();
             builder.Services.AddScoped<IRouteService, RouteService>();
             #endregion
 
@@ -56,7 +83,7 @@ namespace RailVision.WebAPI.Configurations
             #endregion
         }
 
-        public static void UseMiddlewares(this WebApplication app, WebApplicationBuilder builder)
+        public static void UseMiddlewares(this WebApplication app)
         {
             app.UseExceptionHandler();
             app.UseStatusCodePages();
@@ -69,11 +96,20 @@ namespace RailVision.WebAPI.Configurations
                 app.MapOpenApi();
             }
 
-            app.UseSerilogRequestLogging();
+            app.UseResponseCompression();
 
-            bool isDbAvailable = AppDbContext.CheckDatabaseAvailability(builder.Configuration);
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+                {
+                    diagnosticContext.Set("RequestHost", httpContext.Request.Host.Value ?? "Unknown");
+                    diagnosticContext.Set("RequestScheme", httpContext.Request.Scheme);
+                };
 
-            if (isDbAvailable) app.UseHttpLogging();
+                options.MessageTemplate = "Handled {RequestPath}";
+            });
+
+            app.UseHttpLogging();
 
             app.UseHttpsRedirection();
 

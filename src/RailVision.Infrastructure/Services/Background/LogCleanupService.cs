@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,14 +7,24 @@ using RailVision.Infrastructure.Persistence;
 
 namespace RailVision.Infrastructure.Services.Background
 {
-    public class LogCleanupService(ILogger<LogCleanupService> logger, IServiceProvider serviceProvider) : BackgroundService
+    public class LogCleanupService(ILogger<LogCleanupService> logger, IServiceProvider serviceProvider, IConfiguration configuration) : BackgroundService
     {
         private readonly ILogger<LogCleanupService> _logger = logger;
         private readonly IServiceProvider _serviceProvider = serviceProvider;
+        private readonly IConfiguration _configuration = configuration;
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("LogCleanupService is starting.");
+
+            var isDbAvailable = AppDbContext.CheckDatabaseAvailability(_configuration);
+
+            if (!isDbAvailable)
+            {
+                _logger.LogError("Database is not available. LogCleanupService will not run.");
+                return;
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation("LogCleanupService is working.");

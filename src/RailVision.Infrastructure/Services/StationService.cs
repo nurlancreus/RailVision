@@ -2,12 +2,13 @@
 using RailVision.Application.DTOs.Overpass;
 using RailVision.Application.DTOs;
 using Microsoft.Extensions.Logging;
+using RailVision.Application.Abstractions.OverpassAPI;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class StationService(IOverpassApiService overpassApiService, ILogger<StationService> logger) : IStationService
+    public class StationService(IStationsOverpassApiService overpassApiService, ILogger<StationService> logger) : IStationService
     {
-        private readonly IOverpassApiService _overpassApiService = overpassApiService;
+        private readonly IStationsOverpassApiService _overpassApiService = overpassApiService;
         private readonly ILogger<StationService> _logger = logger;
 
         public async Task<IEnumerable<StationDTO>> GetStationCoordsAsync(CancellationToken cancellationToken = default)
@@ -19,7 +20,7 @@ namespace RailVision.Infrastructure.Services
             var stationCoords = stations
                 .Select(e => new StationDTO
                 {
-                    Id = e.Id,
+                    NodeId = e.Id,
                     Name = e.Tags.TryGetValue("name", out var name) ? name : "Unknown",
                     Coordinate = new CoordinateDTO
                     {
@@ -41,7 +42,7 @@ namespace RailVision.Infrastructure.Services
 
             var stationNames = stations.Select(s => new StationDTO
             {
-                Id = s.Id,
+                NodeId = s.Id,
                 Name = s.Tags.TryGetValue("name", out var name) ? name : "Unknown"
             });
 
@@ -50,7 +51,7 @@ namespace RailVision.Infrastructure.Services
             return stationNames;
         }
 
-        public async Task<OverpassResponseDTO> GetStationDataAsync(CancellationToken cancellationToken = default)
+        public async Task<OverpassResponseDTO> GetStationsDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting station data...");
 

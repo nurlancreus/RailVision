@@ -5,7 +5,7 @@ namespace RailVision.Application.Abstractions
 {
     public interface IStationService
     {
-        Task<OverpassResponseDTO> GetStationDataAsync(CancellationToken cancellationToken = default);
+        Task<OverpassResponseDTO> GetStationsDataAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<StationDTO>> GetStationCoordsAsync(CancellationToken cancellationToken = default);
         Task<IEnumerable<StationDTO>> GetStationNamesAsync(CancellationToken cancellationToken = default);
     }

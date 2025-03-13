@@ -2,15 +2,16 @@
 using RailVision.Application.DTOs.Overpass;
 using RailVision.Application.DTOs;
 using Microsoft.Extensions.Logging;
+using RailVision.Application.Abstractions.OverpassAPI;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class RailwayService(IOverpassApiService overpassApiService, ILogger<RailwayService> logger) : IRailwayService
+    public class RailwayService(IRailwaysOverpassApiService overpassApiService, ILogger<RailwayService> logger) : IRailwayService
     {
-        private readonly IOverpassApiService _overpassApiService = overpassApiService;
+        private readonly IRailwaysOverpassApiService _overpassApiService = overpassApiService;
         private readonly ILogger<RailwayService> _logger = logger;
 
-        public async Task<OverpassResponseDTO> GetRailwayDataAsync(CancellationToken cancellationToken = default)
+        public async Task<OverpassResponseDTO> GetRailwaysDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting railway data...");
 
@@ -48,7 +49,7 @@ namespace RailVision.Infrastructure.Services
 
                     return new RailwayLineDTO
                     {
-                        Id = e.Id,
+                        NodeId = e.Id,
                         Coordinates = coordinates
                     };
                 });

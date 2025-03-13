@@ -10,7 +10,7 @@ namespace RailVision.WebAPI.Endpoints
 
             railways.MapGet("data", async (IRailwayService railwayService, CancellationToken cancellationToken) =>
             {
-                var response = await railwayService.GetRailwayDataAsync(cancellationToken);
+                var response = await railwayService.GetRailwaysDataAsync(cancellationToken);
 
                 return Results.Ok(response);
             });

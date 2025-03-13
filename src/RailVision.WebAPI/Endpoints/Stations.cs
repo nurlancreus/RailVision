@@ -17,7 +17,7 @@ namespace RailVision.WebAPI.Endpoints
 
             stations.MapGet("data", async (IStationService stationService, CancellationToken cancellationToken) =>
             {
-                var response = await stationService.GetStationDataAsync(cancellationToken);
+                var response = await stationService.GetStationsDataAsync(cancellationToken);
 
                 return Results.Ok(response);
             });

@@ -27,6 +27,17 @@ Accept: application/json
 
 ###
 
+### Terrains ENDPOINTS
+GET {{RailVision.WebAPI_HostAddress}}/api/terrains/data?type=natural
+Accept: application/json
+
+###
+
+GET {{RailVision.WebAPI_HostAddress}}/api/terrains/data?type=man-made
+Accept: application/json
+
+###
+
 ### Routes ENDPOINTS
 POST {{RailVision.WebAPI_HostAddress}}/api/routes/
 Content-Type: application/json

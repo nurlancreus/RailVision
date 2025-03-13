@@ -16,10 +16,11 @@ namespace RailVision.WebAPI
 
             var app = builder.Build();
 
-            app.UseMiddlewares(builder);
+            app.UseMiddlewares();
 
             app.RegisterRailwaysEndpoints()
                .RegisterStationsEndpoints()
+               .RegisterTerrainsEndpoints()
                .RegisterRoutesEndpoints();
 
             app.Run();

@@ -10,11 +10,16 @@ namespace RailVision.WebAPI.Endpoints
         {
             var terrains = routes.MapGroup("api/terrains");
 
-            terrains.MapGet("data", async ([FromQuery] string type, ITerrainService terrainService, CancellationToken cancellationToken) =>
+            terrains.MapGet("data", async ([FromQuery] string? type, ITerrainService terrainService, CancellationToken cancellationToken) =>
             {
                 var response = await terrainService.GetTerrainObstaclesDataAsync(type, cancellationToken);
 
-                var json = JsonSerializer.Serialize(response);
+                return Results.Ok(response);
+            });
+            
+            terrains.MapGet("coords", async (ITerrainService terrainService, CancellationToken cancellationToken) =>
+            {
+                var response = await terrainService.GetTerrainObstaclesCoordsAsync(cancellationToken);
 
                 return Results.Ok(response);
             });

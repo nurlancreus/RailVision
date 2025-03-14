@@ -85,6 +85,7 @@ namespace RailVision.WebAPI.Configurations
 
         public static void UseMiddlewares(this WebApplication app)
         {
+
             app.UseExceptionHandler();
             app.UseStatusCodePages();
 

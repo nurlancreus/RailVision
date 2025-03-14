@@ -20,7 +20,7 @@ namespace RailVision.Infrastructure.Services
             var railways = (await _railwayService.GetRailwayLinesAsync(cancellationToken)).ToList();
 
             _stationLookup.Clear();
-            stations.ForEach(s => _stationLookup[s.NodeId] = s);
+            stations.ForEach(s => _stationLookup[s.ElementId] = s);
 
             _logger.LogInformation("Built graph with {StationCount} stations and {RailwayCount} railway lines", stations.Count, railways.Count);
 
@@ -34,7 +34,7 @@ namespace RailVision.Infrastructure.Services
 
             var routeStations = path
                 .Select(id => _stationLookup[id])
-                .OrderBy(s => Heuristic(s.NodeId, endId))
+                .OrderBy(s => Heuristic(s.ElementId, endId))
                 .ToList();
 
             var totalDistance = CalculatePathDistance(routeStations);
@@ -54,7 +54,7 @@ namespace RailVision.Infrastructure.Services
 
             foreach (var station in stations)
             {
-                graph[station.NodeId] = [];
+                graph[station.ElementId] = [];
             }
 
             foreach (var line in railways)
@@ -72,8 +72,8 @@ namespace RailVision.Infrastructure.Services
 
                     var distance = CalculateHaversineDistance(from.Coordinate, to.Coordinate);
 
-                    graph[from.NodeId].Add((to.NodeId, distance));
-                    graph[to.NodeId].Add((from.NodeId, distance));
+                    graph[from.ElementId].Add((to.ElementId, distance));
+                    graph[to.ElementId].Add((from.ElementId, distance));
                 }
             }
 

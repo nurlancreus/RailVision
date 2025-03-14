@@ -27,6 +27,11 @@ namespace RailVision.Infrastructure.Services
             return await SendAsync(GetStationsDataQuery(), cancellationToken);
         }
 
+        public async Task<OverpassResponseDTO> GetTerrainObstaclesDataAsync(CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Fetching terrain obstacles data from Overpass API");
+            return await SendAsync(GetTerrainObstaclesQuery(), cancellationToken);
+        }
         public async Task<OverpassResponseDTO> GetNaturalTerrainObstaclesDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Fetching natural terrain obstacles data from Overpass API");
@@ -64,9 +69,7 @@ namespace RailVision.Infrastructure.Services
             [out:json][timeout:60];
             area['name:en'='Azerbaijan']->.a;
             way(area.a)['railway'='rail'];
-            out body;
-            >;
-            out skel;
+            out geom;
         ";
 
         private static string GetStationsDataQuery() => @"
@@ -78,9 +81,23 @@ namespace RailVision.Infrastructure.Services
               way(area.a)['railway'='station'];
               way(area.a)['railway'='halt'];
             );
-            out body;
-            >;
-            out skel;
+            out geom;
+        ";
+
+        private static string GetTerrainObstaclesQuery() => @"
+            [out:json][timeout:60];
+            area['name:en'='Azerbaijan']->.a;
+            (
+              node(area.a)['natural'='peak'];
+              node(area.a)['natural'='hill'];
+              way(area.a)['natural'='cliff'];
+              way(area.a)['natural'='wetland'];
+              way(area.a)['landuse'='forest'];
+              way(area.a)['natural'='water'];
+              way(area.a)['barrier'];
+              relation(area.a)['boundary'='protected_area'];
+            );
+            out geom;
         ";
 
         private static string GetNaturalTerrainObstaclesQuery() => @"
@@ -94,21 +111,17 @@ namespace RailVision.Infrastructure.Services
               way(area.a)['landuse'='forest'];
               way(area.a)['natural'='water'];
             );
-            out body;
-            >;
-            out skel;
+            out geom;
         ";
+
         private static string GetManMadeTerrainObstaclesQuery() => @"
             [out:json][timeout:60];
             area['name:en'='Azerbaijan']->.a;
             (
-              way(area.a)['building'];
               way(area.a)['barrier'];
               relation(area.a)['boundary'='protected_area'];
             );
-            out body;
-            >;
-            out skel;
+            out geom;
         ";
     }
 }

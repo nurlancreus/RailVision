@@ -28,28 +28,19 @@ namespace RailVision.Infrastructure.Services
 
             _logger.LogInformation("Processing railway lines data...");
 
-            var nodeDictionary = railwaysData.Elements
-                .Where(e => e.Type == "node")
-                .ToDictionary(e => e.Id, e => new { e.Lat, e.Lon });
-
             var railwayLines = railwaysData.Elements
                 .Where(e => e.Type == "way" && e.Tags.TryGetValue("railway", out var value) && value == "rail")
                 .Select(e =>
                 {
-                    var coordinates = e.Nodes
-                        .Select(nodeId =>
-                        {
-                            nodeDictionary.TryGetValue(nodeId, out var node);
-                            return new CoordinateDTO
-                            {
-                                Latitude = node?.Lat ?? 0,
-                                Longitude = node?.Lon ?? 0
-                            };
-                        });
+                    var coordinates = e.Geometry.Select(geo => new CoordinateDTO
+                    {
+                        Latitude = geo.Lat,
+                        Longitude = geo.Lon
+                    });
 
                     return new RailwayLineDTO
                     {
-                        NodeId = e.Id,
+                        ElementId = e.Id,
                         Coordinates = coordinates
                     };
                 });

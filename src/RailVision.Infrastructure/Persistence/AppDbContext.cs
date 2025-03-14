@@ -1,6 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using RailVision.Domain.Entities;
+using RailVision.Domain.Entities.Coordinates;
+using RailVision.Infrastructure.Persistence.Configurations;
+using System.Reflection;
 
 namespace RailVision.Infrastructure.Persistence
 {
@@ -9,7 +13,7 @@ namespace RailVision.Infrastructure.Persistence
         // add-migration init -OutputDir Persistence/Migrations
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            // builder.ApplyConfigurationsFromAssembly(Assembly.GetAssembly(typeof(ApplicationUserConfiguration))!);
+            builder.ApplyConfigurationsFromAssembly(Assembly.GetAssembly(typeof(CoordinateConfigurations))!);
 
             base.OnModelCreating(builder);
         }
@@ -32,5 +36,14 @@ namespace RailVision.Infrastructure.Persistence
                 return false;
             }
         }
+
+        public DbSet<Railway> Railways { get; set; }
+        public DbSet<Station> Stations { get; set; }
+        public DbSet<Obstacle> Obstacles { get; set; }
+        public DbSet<Coordinate> Coordinates { get; set; }
+        public DbSet<RailwayCoordinate> RailwayCoordinates { get; set; }
+        public DbSet<StationCoordinate> StationCoordinates { get; set; }
+        public DbSet<ObstacleCoordinate> ObstacleCoordinates { get; set; }
+
     }
 }

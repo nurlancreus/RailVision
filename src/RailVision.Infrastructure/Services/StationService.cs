@@ -20,7 +20,7 @@ namespace RailVision.Infrastructure.Services
             var stationCoords = stations
                 .Select(e => new StationDTO
                 {
-                    NodeId = e.Id,
+                    ElementId = e.Id,
                     Name = e.Tags.TryGetValue("name", out var name) ? name : "Unknown",
                     Coordinate = new CoordinateDTO
                     {
@@ -42,7 +42,7 @@ namespace RailVision.Infrastructure.Services
 
             var stationNames = stations.Select(s => new StationDTO
             {
-                NodeId = s.Id,
+                ElementId = s.Id,
                 Name = s.Tags.TryGetValue("name", out var name) ? name : "Unknown"
             });
 

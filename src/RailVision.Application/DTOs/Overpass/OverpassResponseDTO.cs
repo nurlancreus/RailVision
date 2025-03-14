@@ -7,7 +7,6 @@ namespace RailVision.Application.DTOs.Overpass
         public double Version { get; set; }
         public string Generator { get; set; } = string.Empty;
         public Osm3sDTO Osm3s { get; set; } = null!;
-        public List<ElementDTO> Elements { get; set; } = [];
+        public ICollection<ElementDTO> Elements { get; set; } = [];
     }
-
 }

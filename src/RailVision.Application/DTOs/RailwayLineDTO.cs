@@ -2,7 +2,7 @@
 {
     public record RailwayLineDTO
     {
-        public long NodeId { get; set; }
+        public long ElementId { get; set; }
         public IEnumerable<CoordinateDTO> Coordinates { get; set; } = [];
     }
 

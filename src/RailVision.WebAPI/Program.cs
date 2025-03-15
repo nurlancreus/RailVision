@@ -27,7 +27,8 @@ namespace RailVision.WebAPI
             app.RegisterRailwaysEndpoints()
                .RegisterStationsEndpoints()
                .RegisterTerrainsEndpoints()
-               .RegisterRoutesEndpoints();
+               .RegisterRoutesEndpoints()
+               .RegisterRedisCacheManagementEndpoints();
 
             app.Run();
         }

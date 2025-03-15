@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.ResponseCompression;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.ResponseCompression;
 using RailVision.Application.Abstractions;
+using RailVision.Application.Abstractions.Cache;
 using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Infrastructure.Persistence;
 using RailVision.Infrastructure.Services;
 using RailVision.Infrastructure.Services.Background;
+using RailVision.Infrastructure.Services.Cache.Redis;
+using RailVision.WebAPI.Middlewares;
 using Serilog;
 
 namespace RailVision.WebAPI.Configurations
@@ -24,6 +28,7 @@ namespace RailVision.WebAPI.Configurations
                 AutomaticDecompression = System.Net.DecompressionMethods.GZip | System.Net.DecompressionMethods.Deflate
             });
 
+            // Registering Response Compression
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true; // Compress HTTPS responses
@@ -54,7 +59,9 @@ namespace RailVision.WebAPI.Configurations
                 .ConfigureCORS()
                 .ConfigureDbContext()
                 .ConfigureSeriLog()
-                .ConfigureRateLimiter();
+                .ConfigureRateLimiter()
+                .ConfigureRedis()
+                .ConfigureResponseCaching();
 
             //Registering the Background service
             builder.Services.AddHostedService<LogCleanupService>();
@@ -68,6 +75,7 @@ namespace RailVision.WebAPI.Configurations
             builder.Services.AddScoped<ITerrainsOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<IOverpassApiService, OverpassApiService>();
 
+            builder.Services.AddScoped<IRedisCacheManagement, RedisCacheManagement>();
             builder.Services.AddScoped<IRailwayService, RailwayService>();
             builder.Services.AddScoped<IStationService, StationService>();
             builder.Services.AddScoped<ITerrainService, TerrainService>();
@@ -113,6 +121,9 @@ namespace RailVision.WebAPI.Configurations
             app.UseHttpLogging();
 
             app.UseHttpsRedirection();
+            app.UseResponseCaching();
+
+            app.UseCustomResponseCachingMiddleware();
 
             app.UseAuthentication();
             app.UseAuthorization();

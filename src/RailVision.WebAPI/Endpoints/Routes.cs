@@ -12,7 +12,7 @@ namespace RailVision.WebAPI.Endpoints
 
             appRoutes.MapPost("", async (IRouteService routeService, [FromBody] RouteRequestDTO request, CancellationToken cancellationToken) =>
             {
-                var response = await routeService.CalculateRouteAsync(request, cancellationToken);
+                var response = await routeService.DrawOptimalRouteAsync(request, cancellationToken);
 
                 return Results.Ok(response);
             });

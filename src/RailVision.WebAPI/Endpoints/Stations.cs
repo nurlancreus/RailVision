@@ -1,4 +1,5 @@
 ﻿using RailVision.Application.Abstractions;
+using RailVision.Domain.Entities;
 
 namespace RailVision.WebAPI.Endpoints
 {
@@ -8,13 +9,6 @@ namespace RailVision.WebAPI.Endpoints
         {
             var stations = routes.MapGroup("api/stations");
 
-            stations.MapGet("", async (IStationService stationService, CancellationToken cancellationToken) =>
-            {
-                var response = await stationService.GetStationNamesAsync(cancellationToken);
-
-                return Results.Ok(response);
-            });
-
             stations.MapGet("data", async (IStationService stationService, CancellationToken cancellationToken) =>
             {
                 var response = await stationService.GetStationsDataAsync(cancellationToken);
@@ -22,9 +16,23 @@ namespace RailVision.WebAPI.Endpoints
                 return Results.Ok(response);
             });
 
-            stations.MapGet("coords", async (IStationService stationService, CancellationToken cancellationToken) =>
+            stations.MapGet("", async (IStationService stationService, CancellationToken cancellationToken) =>
             {
-                var response = await stationService.GetStationCoordsAsync(cancellationToken);
+                var response = await stationService.GetAllAsync(cancellationToken);
+
+                return Results.Ok(response);
+            });
+
+            stations.MapGet("{id:guid}", async (Guid id, IStationService stationService, CancellationToken cancellationToken) =>
+            {
+                var response = await stationService.GetByIdAsync(id, cancellationToken);
+
+                return Results.Ok(response);
+            });
+            
+            stations.MapGet("{id:long}", async (long id, IStationService stationService, CancellationToken cancellationToken) =>
+            {
+                var response = await stationService.GetByIdAsync(id, cancellationToken);
 
                 return Results.Ok(response);
             });

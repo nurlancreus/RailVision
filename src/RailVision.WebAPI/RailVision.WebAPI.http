@@ -1,49 +1,80 @@
 @RailVision.WebAPI_HostAddress = https://localhost:7060
 
 ### Railways ENDPOINTS
+
+### Get all railways data from overpass API
 GET {{RailVision.WebAPI_HostAddress}}/api/railways/data
 Accept: application/json
 
-###
+### Get all railways data from database
 
-GET {{RailVision.WebAPI_HostAddress}}/api/railways/lines
+GET {{RailVision.WebAPI_HostAddress}}/api/railways
+Accept: application/json
+
+### Get railway by id from database
+
+GET {{RailVision.WebAPI_HostAddress}}/api/railways/155e9015-aade-4fba-a066-003ae149214c
+Accept: application/json
+
+### Get railway by osmId from database
+
+GET {{RailVision.WebAPI_HostAddress}}/api/railways/502033912
 Accept: application/json
 
 ###
 
 ### Stations ENDPOINTS
+
+### Get all stations data from overpass API
 GET {{RailVision.WebAPI_HostAddress}}/api/stations/data
 Accept: application/json
 
-###
+### Get all stations data from database
 
-GET {{RailVision.WebAPI_HostAddress}}/api/stations/
+GET {{RailVision.WebAPI_HostAddress}}/api/stations
+Accept: application/json
+
+### Get station by id from database
+
+GET {{RailVision.WebAPI_HostAddress}}/api/stations/c89fec21-5e7e-453b-bf66-07c8c3645142
 Accept: application/json
 
 ###
 
-GET {{RailVision.WebAPI_HostAddress}}/api/stations/coords
+GET {{RailVision.WebAPI_HostAddress}}/api/stations/10771629895
 Accept: application/json
 
-###
+### Get station by osmId from database
 
 ### Terrains ENDPOINTS
+
+### Get all terrains data from overpass API
 GET {{RailVision.WebAPI_HostAddress}}/api/terrains/data?type=
 Accept: application/json
 
-###
+### Get all narutal terrains data from overpass API
 
 GET {{RailVision.WebAPI_HostAddress}}/api/terrains/data?type=natural
 Accept: application/json
 
-###
+### Get all man-made terrains data from overpass API
 
 GET {{RailVision.WebAPI_HostAddress}}/api/terrains/data?type=man-made
 Accept: application/json
 
-###
+### Get all terrains from database
 
-GET {{RailVision.WebAPI_HostAddress}}/api/terrains/coords
+GET {{RailVision.WebAPI_HostAddress}}/api/terrains
+Accept: application/json
+
+### Get terrain by id from database
+
+GET {{RailVision.WebAPI_HostAddress}}/api/terrains/65f7781c-014d-4f68-9eb6-0051605de0be
+Accept: application/json
+ 
+### Get terrain by osmId from database
+
+GET {{RailVision.WebAPI_HostAddress}}/api/terrains/302913966
 Accept: application/json
 
 ###
@@ -58,3 +89,23 @@ Content-Type: application/json
 }
 
 ###
+
+### Redis Cache Management ENDPOINTS
+
+### Get all keys and values from Redis Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/redis
+Accept: application/json
+
+### Get all keys from Redis Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/redis/keys
+Accept: application/json
+
+### Get value by key from Redis Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/redis/GetAllRailways
+Accept: application/json
+
+### Clear all keys and values from Redis Cache
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/redis
+
+### Clear value by key from Redis Cache
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/redis/GetRailwayById_502033912

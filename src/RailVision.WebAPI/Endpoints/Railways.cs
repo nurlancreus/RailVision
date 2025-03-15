@@ -15,9 +15,23 @@ namespace RailVision.WebAPI.Endpoints
                 return Results.Ok(response);
             });
 
-            railways.MapGet("lines", async (IRailwayService railwayService, CancellationToken cancellationToken) =>
+            railways.MapGet("", async (IRailwayService railwayService, CancellationToken cancellationToken) =>
             {
-                var response = await railwayService.GetRailwayLinesAsync(cancellationToken);
+                var response = await railwayService.GetAllAsync(cancellationToken);
+
+                return Results.Ok(response);
+            }).WithResponseCache();
+
+            railways.MapGet("{id:guid}", async (Guid id, IRailwayService railwayService, CancellationToken cancellationToken) =>
+            {
+                var response = await railwayService.GetByIdAsync(id, cancellationToken);
+
+                return Results.Ok(response);
+            });
+
+            railways.MapGet("{id:long}", async (long id, IRailwayService railwayService, CancellationToken cancellationToken) =>
+            {
+                var response = await railwayService.GetByIdAsync(id, cancellationToken);
 
                 return Results.Ok(response);
             });

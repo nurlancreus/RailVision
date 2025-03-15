@@ -3,13 +3,26 @@ using RailVision.Application.DTOs.Overpass;
 using RailVision.Application.DTOs;
 using Microsoft.Extensions.Logging;
 using RailVision.Application.Abstractions.OverpassAPI;
+using RailVision.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using RailVision.Application;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
+using RailVision.Domain.Entities;
+using RailVision.Application.Abstractions.Cache;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class RailwayService(IRailwaysOverpassApiService overpassApiService, ILogger<RailwayService> logger) : IRailwayService
+    public class RailwayService(IRailwaysOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<RailwayService> logger) : IRailwayService
     {
         private readonly IRailwaysOverpassApiService _overpassApiService = overpassApiService;
+        private readonly AppDbContext _dbContext = dbContext;
+        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
         private readonly ILogger<RailwayService> _logger = logger;
+        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new ()
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
+        };
 
         public async Task<OverpassResponseDTO> GetRailwaysDataAsync(CancellationToken cancellationToken = default)
         {
@@ -20,34 +33,80 @@ namespace RailVision.Infrastructure.Services
             return result;
         }
 
-        public async Task<IEnumerable<RailwayLineDTO>> GetRailwayLinesAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<RailwayLineDTO>> GetAllAsync(CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Getting railway lines...");
+            var cacheKey = "GetAllRailways";
 
-            var railwaysData = await _overpassApiService.GetRailwaysDataAsync(cancellationToken);
+            var cachedRailways = await _cacheManagement.GetCachedDataByKeyAsync<List<Railway>>(cacheKey, cancellationToken);
 
-            _logger.LogInformation("Processing railway lines data...");
+            if (cachedRailways != null)
+            {
+                _logger.LogInformation("Retrieved railways from cache.");
+                return cachedRailways.Select(r => r.ToRailwayDTO());
+            }
 
-            var railwayLines = railwaysData.Elements
-                .Where(e => e.Type == "way" && e.Tags.TryGetValue("railway", out var value) && value == "rail")
-                .Select(e =>
-                {
-                    var coordinates = e.Geometry.Select(geo => new CoordinateDTO
-                    {
-                        Latitude = geo.Lat,
-                        Longitude = geo.Lon
-                    });
+            var railwayLines = await _dbContext.Railways
+                                .Include(r => r.Coordinates)
+                                .AsNoTracking()
+                                .ToListAsync(cancellationToken);
 
-                    return new RailwayLineDTO
-                    {
-                        ElementId = e.Id,
-                        Coordinates = coordinates
-                    };
-                });
 
-            _logger.LogInformation("Successfully processed railway lines.");
-            return railwayLines;
+            await _cacheManagement.SetDataAsync(cacheKey, railwayLines, distributedCacheEntryOptions, cancellationToken);
 
+            return railwayLines.Select(r => r.ToRailwayDTO());
+        }
+
+        public async Task<RailwayLineDTO> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"GetRailwayById_{id}";
+
+            var cachedRailway = await _cacheManagement.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
+
+            if (cachedRailway != null)
+            {
+                _logger.LogInformation("Retrieved railway from cache.");
+
+                return cachedRailway.ToRailwayDTO();
+            }
+
+            var railway = await _dbContext.Railways
+                .Include(r => r.Coordinates)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
+
+            if (railway == null)
+                throw new Exception($"Railway line with id {id} not found.");
+
+
+            await _cacheManagement.SetDataAsync(cacheKey, railway, distributedCacheEntryOptions, cancellationToken);
+
+            return railway.ToRailwayDTO();
+        }
+
+        public async Task<RailwayLineDTO> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"GetRailwayById_{id}";
+
+            var cachedRailway = await _cacheManagement.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
+
+            if (cachedRailway != null)
+            {
+                _logger.LogInformation("Retrieved railway from cache.");
+
+                return cachedRailway.ToRailwayDTO();
+            }
+
+            var railway = await _dbContext.Railways
+                .Include(r => r.Coordinates)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.ElementId == id, cancellationToken);
+
+            if (railway == null)
+                throw new Exception($"Railway line with id {id} not found.");
+
+            await _cacheManagement.SetDataAsync(cacheKey, railway, distributedCacheEntryOptions, cancellationToken);
+
+            return railway.ToRailwayDTO();
         }
     }
 }

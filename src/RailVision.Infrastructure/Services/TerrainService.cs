@@ -1,77 +1,91 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
+using RailVision.Application;
 using RailVision.Application.Abstractions;
+using RailVision.Application.Abstractions.Cache;
 using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Application.DTOs;
 using RailVision.Application.DTOs.Overpass;
+using RailVision.Domain.Entities;
+using RailVision.Infrastructure.Persistence;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class TerrainService(ITerrainsOverpassApiService overpassApiService, ILogger<TerrainService> logger) : ITerrainService
+    public class TerrainService(ITerrainsOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<TerrainService> logger) : ITerrainService
     {
         private readonly ITerrainsOverpassApiService _overpassApiService = overpassApiService;
+        private readonly AppDbContext _dbContext = dbContext;
         private readonly ILogger<TerrainService> _logger = logger;
-
-        public async Task<IEnumerable<ObstacleDTO>> GetTerrainObstaclesCoordsAsync(CancellationToken cancellationToken = default)
+        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
+        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new()
         {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
+        };
 
-            var result = new List<ObstacleDTO>();
-            var coordinates = new List<CoordinateDTO>();
+        public async Task<IEnumerable<ObstacleDTO>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var cacheKey = "GetAllObstacles";
 
-            var terrainObstaclesData = await _overpassApiService.GetNaturalTerrainObstaclesDataAsync(cancellationToken);
+            var cachedObstacles = await _cacheManagement.GetCachedDataByKeyAsync<List<Obstacle>>(cacheKey, cancellationToken);
 
-            foreach (var element in terrainObstaclesData.Elements)
+            if (cachedObstacles != null)
             {
-                var obstacle = new ObstacleDTO
-                {
-                    ElementId = element.Id
-                };
-
-                if (element.Type == "node")
-                {
-                    obstacle.Coordinate = new CoordinateDTO
-                    {
-                        Latitude = element.Lat ?? 0,
-                        Longitude = element.Lon ?? 0
-                    };
-                }
-                else if (element.Type == "way")
-                {
-                    coordinates.AddRange(element.Geometry.Select(geo => new CoordinateDTO
-                    {
-                        Latitude = geo.Lat,
-                        Longitude = geo.Lon
-                    }));
-                }
-
-                if (element.Tags.TryGetValue("natural", out var naturalType))
-                {
-                    obstacle.Type = naturalType;
-                }
-                else if (element.Tags.TryGetValue("landuse", out var landuseType))
-                {
-                    obstacle.Type = landuseType;
-                }
-                else if (element.Tags.TryGetValue("barries", out var barrierType))
-                {
-                    obstacle.Type = barrierType;
-                }
-                else
-                {
-                    obstacle.Type = "Unknown";
-                }
-
-                if (element.Tags.TryGetValue("name", out var name))
-                {
-                    obstacle.Name = name;
-                }
-
-                obstacle.Coordinates = coordinates;
-                result.Add(obstacle);
+                _logger.LogInformation("Retrieved obstacles from cache.");
+                return cachedObstacles.Select(o => o.ToObstacleDTO());
             }
 
-            return result;
+            var obstacles = await _dbContext.Obstacles
+                .Include(o => o.Coordinates)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            await _cacheManagement.SetDataAsync(cacheKey, obstacles, distributedCacheEntryOptions, cancellationToken);
+
+            return obstacles.Select(o => o.ToObstacleDTO());    
         }
 
+        public async Task<ObstacleDTO> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"GetObstacleById_{id}";
+
+            var cachedObstacle = await _cacheManagement.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
+
+            if (cachedObstacle != null)
+            {
+                _logger.LogInformation("Retrieved obstacle from cache.");
+                return cachedObstacle.ToObstacleDTO();
+            }
+
+            var obstacle = await _dbContext.Obstacles
+                .Include(o => o.Coordinates)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+
+            if (obstacle == null) throw new Exception($"Obstacle with id {id} not found.");
+
+            await _cacheManagement.SetDataAsync(cacheKey, obstacle, distributedCacheEntryOptions, cancellationToken);
+
+            return obstacle.ToObstacleDTO();
+        }
+
+        public async Task<ObstacleDTO> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"GetObstacleById_{id}";
+
+            var cachedObstacle = await _cacheManagement.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
+
+            var obstacle = await _dbContext.Obstacles
+                .Include(o => o.Coordinates)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.ElementId == id, cancellationToken);
+
+            if (obstacle == null) throw new Exception($"Obstacle with id {id} not found.");
+
+            await _cacheManagement.SetDataAsync(cacheKey, obstacle, distributedCacheEntryOptions, cancellationToken);
+
+            return obstacle.ToObstacleDTO();
+        }
         public async Task<OverpassResponseDTO> GetNaturalTerrainObstaclesDataAsync(CancellationToken cancellationToken = default)
         {
             _logger.LogInformation("Getting natural terrain obstacles data...");

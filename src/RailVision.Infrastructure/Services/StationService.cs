@@ -3,52 +3,94 @@ using RailVision.Application.DTOs.Overpass;
 using RailVision.Application.DTOs;
 using Microsoft.Extensions.Logging;
 using RailVision.Application.Abstractions.OverpassAPI;
+using RailVision.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using RailVision.Application;
+using RailVision.Application.Abstractions.Cache;
+using RailVision.Domain.Entities;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class StationService(IStationsOverpassApiService overpassApiService, ILogger<StationService> logger) : IStationService
+    public class StationService(IStationsOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<StationService> logger) : IStationService
     {
         private readonly IStationsOverpassApiService _overpassApiService = overpassApiService;
+        private readonly AppDbContext _dbContext = dbContext;
+        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
         private readonly ILogger<StationService> _logger = logger;
-
-        public async Task<IEnumerable<StationDTO>> GetStationCoordsAsync(CancellationToken cancellationToken = default)
+        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new()
         {
-            _logger.LogInformation("Getting station coordinates...");
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
+        };
 
-            var stations = await GetStationsAsync(cancellationToken);
+        public async Task<IEnumerable<StationDTO>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var cacheKey = "GetAllStations";
 
-            var stationCoords = stations
-                .Select(e => new StationDTO
-                {
-                    ElementId = e.Id,
-                    Name = e.Tags.TryGetValue("name", out var name) ? name : "Unknown",
-                    Coordinate = new CoordinateDTO
-                    {
-                        Latitude = e.Lat ?? 0,
-                        Longitude = e.Lon ?? 0
-                    }
-                });
+            var cachedStations = await _cacheManagement.GetCachedDataByKeyAsync<List<Station>>(cacheKey, cancellationToken);
 
-            _logger.LogInformation("Successfully retrieved station coordinates.");
+            if (cachedStations != null)
+            {
+                _logger.LogInformation("Retrieved stations from cache.");
+                return cachedStations.Select(s => s.ToStationDTO());
+            }
 
-            return stationCoords;
+            var stations = await _dbContext.Stations
+                .Include(s => s.Coordinate)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+
+            await _cacheManagement.SetDataAsync(cacheKey, stations, distributedCacheEntryOptions, cancellationToken);
+
+            return stations.Select(s => s.ToStationDTO());
         }
 
-        public async Task<IEnumerable<StationDTO>> GetStationNamesAsync(CancellationToken cancellationToken = default)
+        public async Task<StationDTO> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Getting station names...");
+            var cacheKey = $"GetStationById_{id}";
 
-            var stations = await GetStationsAsync(cancellationToken);
+            var cachedStation = await _cacheManagement.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
 
-            var stationNames = stations.Select(s => new StationDTO
+            if (cachedStation != null)
             {
-                ElementId = s.Id,
-                Name = s.Tags.TryGetValue("name", out var name) ? name : "Unknown"
-            });
+                _logger.LogInformation("Retrieved station from cache.");
+                return cachedStation.ToStationDTO();
+            }
 
-            _logger.LogInformation("Successfully retrieved station names.");
+            var station = await _dbContext.Stations
+                .Include(s => s.Coordinate)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 
-            return stationNames;
+            if (station == null) throw new Exception($"Station with id {id} not found.");
+
+            await _cacheManagement.SetDataAsync(cacheKey, station, distributedCacheEntryOptions, cancellationToken);
+
+            return station.ToStationDTO();
+        }
+
+        public async Task<StationDTO> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var cacheKey = $"GetStationById_{id}";
+
+            var cachedStation = await _cacheManagement.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
+
+            if (cachedStation != null)
+            {
+                _logger.LogInformation("Retrieved station from cache.");
+                return cachedStation.ToStationDTO();
+            }
+
+            var station = await _dbContext.Stations
+                .Include(s => s.Coordinate)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.ElementId == id, cancellationToken);
+
+            if (station == null) throw new Exception($"Station with id {id} not found.");
+
+            await _cacheManagement.SetDataAsync(cacheKey, station, distributedCacheEntryOptions, cancellationToken);
+
+            return station.ToStationDTO();
         }
 
         public async Task<OverpassResponseDTO> GetStationsDataAsync(CancellationToken cancellationToken = default)
@@ -59,22 +101,6 @@ namespace RailVision.Infrastructure.Services
             _logger.LogInformation("Successfully retrieved station data.");
 
             return result;
-        }
-
-        private async Task<IEnumerable<ElementDTO>> GetStationsAsync(CancellationToken cancellationToken = default)
-        {
-            _logger.LogInformation("Getting stations...");
-
-            var stationsData = await _overpassApiService.GetStationsDataAsync(cancellationToken);
-
-            var stations = stationsData.Elements
-                .Where(e => (e.Type == "node" || e.Type == "way") &&
-                            e.Tags.TryGetValue("railway", out var railwayType) &&
-                            (railwayType == "station" || railwayType == "halt") /*&& !e.Tags.TryGetValue("subway", out var _)*/);
-
-            _logger.LogInformation("Successfully retrieved station data from Overpass.");
-
-            return stations;
         }
     }
 }

@@ -8,26 +8,22 @@ using Microsoft.EntityFrameworkCore;
 using RailVision.Application;
 using RailVision.Application.Abstractions.Cache;
 using RailVision.Domain.Entities;
-using Microsoft.Extensions.Caching.Distributed;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class StationService(IStationsOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<StationService> logger) : IStationService
+    public class StationService(IStationsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagerService cacheManager, ILogger<StationService> logger) : IStationService
     {
         private readonly IStationsOverpassApiService _overpassApiService = overpassApiService;
         private readonly AppDbContext _dbContext = dbContext;
-        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
+        private readonly ICacheManagerService _cacheManager = cacheManager;
         private readonly ILogger<StationService> _logger = logger;
-        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new()
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
-        };
+        private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 
         public async Task<IEnumerable<StationDTO>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var cacheKey = "GetAllStations";
 
-            var cachedStations = await _cacheManagement.GetCachedDataByKeyAsync<List<Station>>(cacheKey, cancellationToken);
+            var cachedStations = await _cacheManager.GetCachedDataByKeyAsync<List<Station>>(cacheKey, cancellationToken);
 
             if (cachedStations != null)
             {
@@ -40,7 +36,7 @@ namespace RailVision.Infrastructure.Services
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            await _cacheManagement.SetDataAsync(cacheKey, stations, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, stations, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return stations.Select(s => s.ToStationDTO());
         }
@@ -49,7 +45,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetStationById_{id}";
 
-            var cachedStation = await _cacheManagement.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
+            var cachedStation = await _cacheManager.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
 
             if (cachedStation != null)
             {
@@ -64,7 +60,7 @@ namespace RailVision.Infrastructure.Services
 
             if (station == null) throw new Exception($"Station with id {id} not found.");
 
-            await _cacheManagement.SetDataAsync(cacheKey, station, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, station, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return station.ToStationDTO();
         }
@@ -73,7 +69,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetStationById_{id}";
 
-            var cachedStation = await _cacheManagement.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
+            var cachedStation = await _cacheManager.GetCachedDataByKeyAsync<Station>(cacheKey, cancellationToken);
 
             if (cachedStation != null)
             {
@@ -88,7 +84,7 @@ namespace RailVision.Infrastructure.Services
 
             if (station == null) throw new Exception($"Station with id {id} not found.");
 
-            await _cacheManagement.SetDataAsync(cacheKey, station, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, station, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return station.ToStationDTO();
         }

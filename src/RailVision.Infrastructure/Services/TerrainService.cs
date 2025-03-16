@@ -12,22 +12,19 @@ using RailVision.Infrastructure.Persistence;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class TerrainService(ITerrainsOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<TerrainService> logger) : ITerrainService
+    public class TerrainService(ITerrainsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagerService cacheManager, ILogger<TerrainService> logger) : ITerrainService
     {
         private readonly ITerrainsOverpassApiService _overpassApiService = overpassApiService;
         private readonly AppDbContext _dbContext = dbContext;
         private readonly ILogger<TerrainService> _logger = logger;
-        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
-        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new()
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
-        };
+        private readonly ICacheManagerService _cacheManager = cacheManager;
+        private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 
         public async Task<IEnumerable<ObstacleDTO>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var cacheKey = "GetAllObstacles";
 
-            var cachedObstacles = await _cacheManagement.GetCachedDataByKeyAsync<List<Obstacle>>(cacheKey, cancellationToken);
+            var cachedObstacles = await _cacheManager.GetCachedDataByKeyAsync<List<Obstacle>>(cacheKey, cancellationToken);
 
             if (cachedObstacles != null)
             {
@@ -40,7 +37,7 @@ namespace RailVision.Infrastructure.Services
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            await _cacheManagement.SetDataAsync(cacheKey, obstacles, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, obstacles, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return obstacles.Select(o => o.ToObstacleDTO());    
         }
@@ -49,7 +46,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetObstacleById_{id}";
 
-            var cachedObstacle = await _cacheManagement.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
+            var cachedObstacle = await _cacheManager.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
 
             if (cachedObstacle != null)
             {
@@ -64,7 +61,7 @@ namespace RailVision.Infrastructure.Services
 
             if (obstacle == null) throw new Exception($"Obstacle with id {id} not found.");
 
-            await _cacheManagement.SetDataAsync(cacheKey, obstacle, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, obstacle, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return obstacle.ToObstacleDTO();
         }
@@ -73,7 +70,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetObstacleById_{id}";
 
-            var cachedObstacle = await _cacheManagement.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
+            var cachedObstacle = await _cacheManager.GetCachedDataByKeyAsync<Obstacle>(cacheKey, cancellationToken);
 
             var obstacle = await _dbContext.Obstacles
                 .Include(o => o.Coordinates)
@@ -82,7 +79,7 @@ namespace RailVision.Infrastructure.Services
 
             if (obstacle == null) throw new Exception($"Obstacle with id {id} not found.");
 
-            await _cacheManagement.SetDataAsync(cacheKey, obstacle, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, obstacle, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return obstacle.ToObstacleDTO();
         }

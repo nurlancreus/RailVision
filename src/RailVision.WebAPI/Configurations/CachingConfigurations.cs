@@ -2,11 +2,38 @@
 using StackExchange.Redis;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using RailVision.Application.Abstractions.Cache;
+using RailVision.Infrastructure.Services.Cache;
+using RailVision.Infrastructure.Services.Cache.Redis;
+using RailVision.Infrastructure.Services.Cache.InMemory;
 
 namespace RailVision.WebAPI.Configurations
 {
     public static class CachingConfigurations
     {
+        public static WebApplicationBuilder EnableCaching<T>(this WebApplicationBuilder builder) where T : class, ICacheManager
+        {
+            // Register Cache Manager
+            builder.Services.AddSingleton<ICacheManager, T>();
+
+            // Register Cache Manager Service
+            builder.Services.AddScoped<ICacheManagerService, CacheManagerService>();
+
+            // Register Redis Cache Manager
+            builder.Services.AddScoped<IRedisCacheManager, RedisCacheManager>();
+
+            // Register In-Memory Cache Manager
+            builder.Services.AddScoped<IInMemoryCacheManager, InMemoryCacheManager>();
+
+            return builder;
+        }
+        public static WebApplicationBuilder ConfigureInMemoryCaching(this WebApplicationBuilder builder)
+        {
+            // Enable In-Memory Caching
+            builder.Services.AddMemoryCache();
+
+            return builder;
+        }
         public static WebApplicationBuilder ConfigureRedis(this WebApplicationBuilder builder)
         {
             // Register Redis distributed cache

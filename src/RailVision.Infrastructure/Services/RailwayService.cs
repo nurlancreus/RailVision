@@ -13,16 +13,13 @@ using RailVision.Application.Abstractions.Cache;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class RailwayService(IRailwaysOverpassApiService overpassApiService, AppDbContext dbContext, IRedisCacheManagement cacheManagement, ILogger<RailwayService> logger) : IRailwayService
+    public class RailwayService(IRailwaysOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagerService cacheManager, ILogger<RailwayService> logger) : IRailwayService
     {
         private readonly IRailwaysOverpassApiService _overpassApiService = overpassApiService;
         private readonly AppDbContext _dbContext = dbContext;
-        private readonly IRedisCacheManagement _cacheManagement = cacheManagement;
+        private readonly ICacheManagerService _cacheManager = cacheManager;
         private readonly ILogger<RailwayService> _logger = logger;
-        private readonly DistributedCacheEntryOptions distributedCacheEntryOptions = new ()
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1),
-        };
+        private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 
         public async Task<OverpassResponseDTO> GetRailwaysDataAsync(CancellationToken cancellationToken = default)
         {
@@ -37,7 +34,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = "GetAllRailways";
 
-            var cachedRailways = await _cacheManagement.GetCachedDataByKeyAsync<List<Railway>>(cacheKey, cancellationToken);
+            var cachedRailways = await _cacheManager.GetCachedDataByKeyAsync<List<Railway>>(cacheKey, cancellationToken);
 
             if (cachedRailways != null)
             {
@@ -51,7 +48,7 @@ namespace RailVision.Infrastructure.Services
                                 .ToListAsync(cancellationToken);
 
 
-            await _cacheManagement.SetDataAsync(cacheKey, railwayLines, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, railwayLines, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return railwayLines.Select(r => r.ToRailwayDTO());
         }
@@ -60,7 +57,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetRailwayById_{id}";
 
-            var cachedRailway = await _cacheManagement.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
+            var cachedRailway = await _cacheManager.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
 
             if (cachedRailway != null)
             {
@@ -78,7 +75,7 @@ namespace RailVision.Infrastructure.Services
                 throw new Exception($"Railway line with id {id} not found.");
 
 
-            await _cacheManagement.SetDataAsync(cacheKey, railway, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, railway, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return railway.ToRailwayDTO();
         }
@@ -87,7 +84,7 @@ namespace RailVision.Infrastructure.Services
         {
             var cacheKey = $"GetRailwayById_{id}";
 
-            var cachedRailway = await _cacheManagement.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
+            var cachedRailway = await _cacheManager.GetCachedDataByKeyAsync<Railway>(cacheKey, cancellationToken);
 
             if (cachedRailway != null)
             {
@@ -104,7 +101,7 @@ namespace RailVision.Infrastructure.Services
             if (railway == null)
                 throw new Exception($"Railway line with id {id} not found.");
 
-            await _cacheManagement.SetDataAsync(cacheKey, railway, distributedCacheEntryOptions, cancellationToken);
+            await _cacheManager.SetDataAsync(cacheKey, railway, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
             return railway.ToRailwayDTO();
         }

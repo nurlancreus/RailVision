@@ -116,8 +116,8 @@ namespace RailVision.Infrastructure.Persistence
             var stations = stationsData.Elements
                 .Where(e => (e.Type == "node" || e.Type == "way") &&
                             e.Tags.TryGetValue("railway", out var railwayType) &&
-                            (railwayType == "station" || railwayType == "halt") &&
-                            !e.Tags.ContainsKey("subway"));
+                            (railwayType == "station" || railwayType == "halt") /*&&
+                            !e.Tags.ContainsKey("subway")*/);
 
             var stationEntities = stations.Select(e => new Station
             {

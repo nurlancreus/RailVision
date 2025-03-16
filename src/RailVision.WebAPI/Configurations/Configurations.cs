@@ -6,6 +6,7 @@ using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Infrastructure.Persistence;
 using RailVision.Infrastructure.Services;
 using RailVision.Infrastructure.Services.Background;
+using RailVision.Infrastructure.Services.Cache.InMemory;
 using RailVision.Infrastructure.Services.Cache.Redis;
 using RailVision.WebAPI.Middlewares;
 using Serilog;
@@ -60,8 +61,11 @@ namespace RailVision.WebAPI.Configurations
                 .ConfigureDbContext()
                 .ConfigureSeriLog()
                 .ConfigureRateLimiter()
+                .ConfigureInMemoryCaching()
                 .ConfigureRedis()
                 .ConfigureResponseCaching();
+
+            builder.EnableCaching<InMemoryCacheManager>();
 
             //Registering the Background service
             builder.Services.AddHostedService<LogCleanupService>();
@@ -75,7 +79,6 @@ namespace RailVision.WebAPI.Configurations
             builder.Services.AddScoped<ITerrainsOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<IOverpassApiService, OverpassApiService>();
 
-            builder.Services.AddScoped<IRedisCacheManagement, RedisCacheManagement>();
             builder.Services.AddScoped<IRailwayService, RailwayService>();
             builder.Services.AddScoped<IStationService, StationService>();
             builder.Services.AddScoped<ITerrainService, TerrainService>();

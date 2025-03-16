@@ -108,4 +108,24 @@ Accept: application/json
 DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/redis
 
 ### Clear value by key from Redis Cache
-DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/redis/GetRailwayById_502033912
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/redis/GetAllStations
+
+### InMemory Cache Management ENDPOINTS
+
+### Get all keys and values from InMemory Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory
+Accept: application/json
+
+### Get all keys from InMemory Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/keys
+Accept: application/json
+
+### Get value by key from InMemory Cache
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllRailways
+Accept: application/json
+
+### Clear all keys and values from InMemory Cache
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory
+
+### Clear value by key from InMemory Cache
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllRailways

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using RailVision.Infrastructure.Persistence;
 using RailVision.WebAPI.Configurations;
 using RailVision.WebAPI.Endpoints;
+using RailVision.WebAPI.Endpoints.Cache;
 
 namespace RailVision.WebAPI
 {
@@ -28,7 +29,8 @@ namespace RailVision.WebAPI
                .RegisterStationsEndpoints()
                .RegisterTerrainsEndpoints()
                .RegisterRoutesEndpoints()
-               .RegisterRedisCacheManagementEndpoints();
+               .RegisterRedisCacheManagementEndpoints()
+               .RegisterInMemoryCacheManagementEndpoints();
 
             app.Run();
         }

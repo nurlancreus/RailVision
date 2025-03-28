@@ -11,5 +11,6 @@ namespace RailVision.Application.DTOs.Overpass
         public Dictionary<string, double> Bounds { get; set; } = [];
         public ICollection<GeometryDTO> Geometry { get; set; } = [];
         public Dictionary<string, string> Tags { get; set; } = [];
+        public List<long> Nodes { get; set; } = [];
     }
 }

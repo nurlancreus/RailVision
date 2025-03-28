@@ -26,6 +26,20 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PopulationCenters",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ElementId = table.Column<long>(type: "bigint", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Population = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PopulationCenters", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Railways",
                 columns: table => new
                 {
@@ -57,8 +71,9 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Latitude = table.Column<double>(type: "float", nullable: false),
                     Longitude = table.Column<double>(type: "float", nullable: false),
-                    Type = table.Column<string>(type: "nvarchar(13)", maxLength: 13, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(34)", maxLength: 34, nullable: false),
                     ObstacleId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    PopulationCenterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RailwayId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     StationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
@@ -71,6 +86,12 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                         name: "FK_Coordinates_Obstacles_ObstacleId",
                         column: x => x.ObstacleId,
                         principalTable: "Obstacles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Coordinates_PopulationCenters_PopulationCenterId",
+                        column: x => x.PopulationCenterId,
+                        principalTable: "PopulationCenters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -93,6 +114,13 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                 column: "ObstacleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Coordinates_PopulationCenterId",
+                table: "Coordinates",
+                column: "PopulationCenterId",
+                unique: true,
+                filter: "[PopulationCenterId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Coordinates_RailwayId",
                 table: "Coordinates",
                 column: "RailwayId");
@@ -113,6 +141,9 @@ namespace RailVision.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "Obstacles");
+
+            migrationBuilder.DropTable(
+                name: "PopulationCenters");
 
             migrationBuilder.DropTable(
                 name: "Railways");

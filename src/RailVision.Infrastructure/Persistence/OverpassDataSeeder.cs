@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RailVision.Application.Abstractions.OverpassAPI;
+using RailVision.Application.DTOs;
 using RailVision.Domain.Entities;
 using RailVision.Domain.Entities.Coordinates;
 
@@ -36,6 +37,7 @@ namespace RailVision.Infrastructure.Persistence
             {
                 await SeedRailwaysAsync(dbContext, overpassService, logger, cancellationToken);
                 await SeedStationsAsync(dbContext, overpassService, logger, cancellationToken);
+                await SeedPopulationCentersAsync(dbContext, overpassService, logger, cancellationToken);
                 await SeedObstaclesAsync(dbContext, overpassService, logger, cancellationToken);
 
                 await transaction.CommitAsync(cancellationToken);
@@ -62,7 +64,7 @@ namespace RailVision.Infrastructure.Persistence
             var railwaysData = await overpassService.GetRailwaysDataAsync(cancellationToken);
 
             var railways = railwaysData.Elements
-                .Where(e => e.Type == "way" && e.Tags.TryGetValue("railway", out var value) && value == "rail");
+                .Where(e => e.Type == "way" && e.Tags.TryGetValue("railway", out var value) && (value == "rail" || value == "subway"));
 
             var railwaysEntities = railways.Select(e => new Railway
             {
@@ -136,18 +138,42 @@ namespace RailVision.Infrastructure.Persistence
 
             // Insert StationCoordinates
             var stationCoordinates = stations
-                .Select(e =>
-                {
-                    var station = stationEntities.First(s => s.ElementId == e.Id);
-                    return new StationCoordinate
-                    {
-                        Id = Guid.NewGuid(),
-                        StationId = station.Id,
-                        Latitude = e.Lat ?? 0,
-                        Longitude = e.Lon ?? 0
-                    };
-                })
-                .ToList();
+                 .Select(e =>
+                 {
+                     var station = stationEntities.First(s => s.ElementId == e.Id);
+
+                     StationCoordinate? stationCoordinate = null;
+
+                     if (e.Type == "node")
+                     {
+                         stationCoordinate = new StationCoordinate
+                         {
+                             Latitude = e.Lat ?? 0,
+                             Longitude = e.Lon ?? 0
+                         };
+                     }
+                     else
+                     {
+                         stationCoordinate = new StationCoordinate
+                         {
+
+                             Latitude = (e.Bounds.GetValueOrDefault("minlat", 0) + e.Bounds.GetValueOrDefault("maxlat", 0)) / 2,
+                             Longitude = (e.Bounds.GetValueOrDefault("minlon", 0) + e.Bounds.GetValueOrDefault("maxlon", 0)) / 2
+                         };
+                     }
+
+                     if (stationCoordinate == null)
+                     {
+                         logger.LogWarning("Population Center Coordinate is null.");
+                         throw new Exception("Population Center Coordinate is null.");
+                     }
+
+                     stationCoordinate.Id = Guid.NewGuid();
+                     stationCoordinate.StationId = station.Id;
+
+                     return stationCoordinate;
+                 })
+                 .ToList();
 
             await dbContext.BulkInsertAsync(stationCoordinates, new BulkConfig
             {
@@ -156,6 +182,84 @@ namespace RailVision.Infrastructure.Persistence
             }, cancellationToken: cancellationToken);
 
             logger.LogInformation("Stations seeding completed.");
+        }
+
+        private static async Task SeedPopulationCentersAsync(AppDbContext dbContext, IOverpassApiService overpassService, ILogger logger, CancellationToken cancellationToken)
+        {
+            if (await dbContext.PopulationCenters.AnyAsync(cancellationToken))
+            {
+                logger.LogInformation("Population Centers data already seeded, skipping...");
+                return;
+            }
+
+            logger.LogInformation("Seeding Population Centers data...");
+            var populationCentersData = await overpassService.GetPopulationCentersAsync(cancellationToken);
+
+            var populationCenters = populationCentersData.Elements
+                .Where(e => e.Tags.ContainsKey("population"));
+
+            var populationCentersEntities = populationCenters.Select(e => new PopulationCenter
+            {
+                Id = Guid.NewGuid(),
+                ElementId = e.Id,
+                Name = e.Tags.TryGetValue("name", out var name) ? name : "Unknown",
+                Population = e.Tags.TryGetValue("population", out var population) ? int.Parse(population) : 0
+            })
+                .ToList();
+
+            // Insert Population Centers first
+            await dbContext.BulkInsertAsync(populationCentersEntities, new BulkConfig
+            {
+                BatchSize = 500,
+                PreserveInsertOrder = true
+            }, cancellationToken: cancellationToken);
+
+            // Insert Population Centers Coordinates
+            var populationCenterCoordinates = populationCenters
+                .Select(e =>
+                {
+                    var populationCenter = populationCentersEntities.First(pc => pc.ElementId == e.Id);
+
+                    PopulationCenterCoordinate? populationCenterCoordinate = null;
+
+                    if (e.Type == "node")
+                    {
+                        populationCenterCoordinate = new PopulationCenterCoordinate
+                        {
+                            Latitude = e.Lat ?? 0,
+                            Longitude = e.Lon ?? 0
+                        };
+                    }
+                    else 
+                    {
+                        populationCenterCoordinate = new PopulationCenterCoordinate
+                        {
+
+                            Latitude = (e.Bounds.GetValueOrDefault("minlat", 0) + e.Bounds.GetValueOrDefault("maxlat", 0)) / 2,
+                            Longitude = (e.Bounds.GetValueOrDefault("minlon", 0) + e.Bounds.GetValueOrDefault("maxlon", 0)) / 2
+                        };
+                    }
+
+                    if (populationCenterCoordinate == null)
+                    {
+                        logger.LogWarning("Population Center Coordinate is null.");
+                        throw new Exception("Population Center Coordinate is null.");
+                    }
+
+                    populationCenterCoordinate.Id = Guid.NewGuid();
+                    populationCenterCoordinate.PopulationCenterId = populationCenter.Id;
+
+                    return populationCenterCoordinate;
+                })
+                .ToList();
+
+            await dbContext.BulkInsertAsync(populationCenterCoordinates, new BulkConfig
+            {
+                BatchSize = 500,
+                PreserveInsertOrder = true
+            }, cancellationToken: cancellationToken);
+
+            logger.LogInformation("Population Centers seeding completed.");
         }
 
         private static async Task SeedObstaclesAsync(AppDbContext dbContext, IOverpassApiService overpassService, ILogger logger, CancellationToken cancellationToken)

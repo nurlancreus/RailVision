@@ -32,6 +32,16 @@ namespace RailVision.Infrastructure.Persistence.Configurations
         }
     }
 
+    public class PopulationCenterCoordinateConfigurations : IEntityTypeConfiguration<PopulationCenterCoordinate>
+    {
+        public void Configure(EntityTypeBuilder<PopulationCenterCoordinate> builder)
+        {
+            builder.HasOne(c => c.PopulationCenter)
+                   .WithOne(s => s.Coordinate)
+                   .HasForeignKey<PopulationCenterCoordinate>(c => c.PopulationCenterId);
+        }
+    }
+
     public class StationCoordinateConfigurations : IEntityTypeConfiguration<StationCoordinate>
     {
         public void Configure(EntityTypeBuilder<StationCoordinate> builder)

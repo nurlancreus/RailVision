@@ -36,8 +36,8 @@ namespace RailVision.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("nvarchar(13)");
+                        .HasMaxLength(34)
+                        .HasColumnType("nvarchar(34)");
 
                     b.HasKey("Id");
 
@@ -73,6 +73,27 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Obstacles");
+                });
+
+            modelBuilder.Entity("RailVision.Domain.Entities.PopulationCenter", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<long>("ElementId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Population")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PopulationCenters");
                 });
 
             modelBuilder.Entity("RailVision.Domain.Entities.Railway", b =>
@@ -126,6 +147,27 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                     b.HasDiscriminator().HasValue("Obstacle");
                 });
 
+            modelBuilder.Entity("RailVision.Domain.Entities.Coordinates.PopulationCenterCoordinate", b =>
+                {
+                    b.HasBaseType("RailVision.Domain.Entities.Coordinates.Coordinate");
+
+                    b.Property<Guid>("PopulationCenterId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasIndex("PopulationCenterId")
+                        .IsUnique()
+                        .HasFilter("[PopulationCenterId] IS NOT NULL");
+
+                    b.ToTable(t =>
+                        {
+                            t.HasCheckConstraint("CK_Coordinates_Latitude", "[Latitude] >= -90 AND [Latitude] <= 90");
+
+                            t.HasCheckConstraint("CK_Coordinates_Longitude", "[Longitude] >= -180 AND [Longitude] <= 180");
+                        });
+
+                    b.HasDiscriminator().HasValue("PopulationCenterCoordinate");
+                });
+
             modelBuilder.Entity("RailVision.Domain.Entities.Coordinates.RailwayCoordinate", b =>
                 {
                     b.HasBaseType("RailVision.Domain.Entities.Coordinates.Coordinate");
@@ -177,6 +219,17 @@ namespace RailVision.Infrastructure.Persistence.Migrations
                     b.Navigation("Obstacle");
                 });
 
+            modelBuilder.Entity("RailVision.Domain.Entities.Coordinates.PopulationCenterCoordinate", b =>
+                {
+                    b.HasOne("RailVision.Domain.Entities.PopulationCenter", "PopulationCenter")
+                        .WithOne("Coordinate")
+                        .HasForeignKey("RailVision.Domain.Entities.Coordinates.PopulationCenterCoordinate", "PopulationCenterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PopulationCenter");
+                });
+
             modelBuilder.Entity("RailVision.Domain.Entities.Coordinates.RailwayCoordinate", b =>
                 {
                     b.HasOne("RailVision.Domain.Entities.Railway", "Railway")
@@ -202,6 +255,12 @@ namespace RailVision.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("RailVision.Domain.Entities.Obstacle", b =>
                 {
                     b.Navigation("Coordinates");
+                });
+
+            modelBuilder.Entity("RailVision.Domain.Entities.PopulationCenter", b =>
+                {
+                    b.Navigation("Coordinate")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RailVision.Domain.Entities.Railway", b =>

@@ -37,6 +37,7 @@ namespace RailVision.Infrastructure.Persistence
             }
         }
 
+        public DbSet<PopulationCenter> PopulationCenters { get; set; }
         public DbSet<Railway> Railways { get; set; }
         public DbSet<Station> Stations { get; set; }
         public DbSet<Obstacle> Obstacles { get; set; }

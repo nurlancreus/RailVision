@@ -8,6 +8,7 @@ using RailVision.Infrastructure.Services;
 using RailVision.Infrastructure.Services.Background;
 using RailVision.Infrastructure.Services.Cache.InMemory;
 using RailVision.Infrastructure.Services.Cache.Redis;
+using RailVision.Infrastructure.Services.PathFinding;
 using RailVision.WebAPI.Middlewares;
 using Serilog;
 
@@ -56,6 +57,7 @@ namespace RailVision.WebAPI.Configurations
                   options.JsonSerializerOptions.PropertyNameCaseInsensitive = true; // Enable case-insensitive deserialization
               });
 
+            // Registering the Configurations
             builder
                 .ConfigureCORS()
                 .ConfigureDbContext()
@@ -65,7 +67,11 @@ namespace RailVision.WebAPI.Configurations
                 .ConfigureRedis()
                 .ConfigureResponseCaching();
 
-            builder.EnableCaching<InMemoryCacheManager>();
+            // Set Caching stragegy
+            builder.SetCaching<InMemoryCacheManager>();
+
+            // Set Path Finding stragegy
+            builder.SetPathFindingStrategy<AStarPathFinding>();
 
             //Registering the Background service
             builder.Services.AddHostedService<LogCleanupService>();
@@ -77,10 +83,12 @@ namespace RailVision.WebAPI.Configurations
             builder.Services.AddScoped<IStationsOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<IRailwaysOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<ITerrainsOverpassApiService, OverpassApiService>();
+            builder.Services.AddScoped<IPopulationCentersOverpassApiService, OverpassApiService>();
             builder.Services.AddScoped<IOverpassApiService, OverpassApiService>();
 
             builder.Services.AddScoped<IRailwayService, RailwayService>();
             builder.Services.AddScoped<IStationService, StationService>();
+            builder.Services.AddScoped<IPopulationCenterService, PopulationCenterService>();
             builder.Services.AddScoped<ITerrainService, TerrainService>();
             builder.Services.AddScoped<IRouteService, RouteService>();
             #endregion

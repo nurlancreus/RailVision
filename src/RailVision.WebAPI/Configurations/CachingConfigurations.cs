@@ -11,13 +11,13 @@ namespace RailVision.WebAPI.Configurations
 {
     public static class CachingConfigurations
     {
-        public static WebApplicationBuilder EnableCaching<T>(this WebApplicationBuilder builder) where T : class, ICacheManager
+        public static WebApplicationBuilder SetCaching<T>(this WebApplicationBuilder builder) where T : class, ICacheManager
         {
             // Register Cache Manager
             builder.Services.AddSingleton<ICacheManager, T>();
 
-            // Register Cache Manager Service
-            builder.Services.AddScoped<ICacheManagerService, CacheManagerService>();
+            // Register Cache Management Service
+            builder.Services.AddScoped<ICacheManagement, CacheManagement>();
 
             // Register Redis Cache Manager
             builder.Services.AddScoped<IRedisCacheManager, RedisCacheManager>();

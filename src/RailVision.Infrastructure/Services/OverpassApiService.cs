@@ -44,6 +44,12 @@ namespace RailVision.Infrastructure.Services
             return await SendAsync(GetManMadeTerrainObstaclesQuery(), cancellationToken);
         }
 
+        public async Task<OverpassResponseDTO> GetPopulationCentersAsync(CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Fetching population centers from Overpass API");
+            return await SendAsync(GetPopulationCentersQuery(), cancellationToken);
+        }
+
         private async Task<OverpassResponseDTO> SendAsync(string query, CancellationToken cancellationToken = default)
         {
             _httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new System.Net.Http.Headers.StringWithQualityHeaderValue("gzip"));
@@ -69,8 +75,19 @@ namespace RailVision.Infrastructure.Services
             [out:json][timeout:60];
             area['name:en'='Azerbaijan']->.a;
             way(area.a)['railway'='rail'];
+            way(area.a)['railway'='subway'];
             out geom;
         ";
+
+        //private static string GetRailwaysDataQuery() => @"
+        //     [out:json][timeout:60];
+        //        area['name:en'='Azerbaijan']->.a;
+        //        way(area.a)['railway'='rail'];
+        //        way(area.a)['railway'='subway'];
+        //        out body;
+        //        >;
+        //        out skel qt;
+        //";
 
         private static string GetStationsDataQuery() => @"
             [out:json][timeout:60];
@@ -83,6 +100,32 @@ namespace RailVision.Infrastructure.Services
             );
             out geom;
         ";
+
+        //private static string GetStationsDataQuery() => @"
+        //    [out:json][timeout:60];
+        //    area['name:en'='Azerbaijan']->.a;
+        //    (
+        //      node(area.a)['railway'='station'];
+        //      node(area.a)['railway'='halt'];
+        //      way(area.a)['railway'='station'];
+        //      way(area.a)['railway'='halt'];
+        //    );
+        //    out body;
+        //    >;
+        //    out skel qt;
+        //";
+
+        private static string GetPopulationCentersQuery() => @"
+            [out:json][timeout:60];
+            area['name:en'='Azerbaijan']->.a;
+            (
+              node(area.a)['place'~'city|town|village'];
+              way(area.a)['place'~'city|town|village'];
+              relation(area.a)['place'~'city|town|village'];
+            );
+            out geom;
+        ";
+
 
         private static string GetTerrainObstaclesQuery() => @"
             [out:json][timeout:60];

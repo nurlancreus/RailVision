@@ -1,23 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
-using RailVision.Application;
 using RailVision.Application.Abstractions;
 using RailVision.Application.Abstractions.Cache;
 using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Application.DTOs;
 using RailVision.Application.DTOs.Overpass;
+using RailVision.Application.Helpers;
 using RailVision.Domain.Entities;
 using RailVision.Infrastructure.Persistence;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class TerrainService(ITerrainsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagerService cacheManager, ILogger<TerrainService> logger) : ITerrainService
+    public class TerrainService(ITerrainsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagement cacheManager, ILogger<TerrainService> logger) : ITerrainService
     {
         private readonly ITerrainsOverpassApiService _overpassApiService = overpassApiService;
         private readonly AppDbContext _dbContext = dbContext;
         private readonly ILogger<TerrainService> _logger = logger;
-        private readonly ICacheManagerService _cacheManager = cacheManager;
+        private readonly ICacheManagement _cacheManager = cacheManager;
         private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 
         public async Task<IEnumerable<ObstacleDTO>> GetAllAsync(CancellationToken cancellationToken = default)

@@ -5,17 +5,17 @@ using Microsoft.Extensions.Logging;
 using RailVision.Application.Abstractions.OverpassAPI;
 using RailVision.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using RailVision.Application;
 using RailVision.Application.Abstractions.Cache;
 using RailVision.Domain.Entities;
+using RailVision.Application.Helpers;
 
 namespace RailVision.Infrastructure.Services
 {
-    public class StationService(IStationsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagerService cacheManager, ILogger<StationService> logger) : IStationService
+    public class StationService(IStationsOverpassApiService overpassApiService, AppDbContext dbContext, ICacheManagement cacheManager, ILogger<StationService> logger) : IStationService
     {
         private readonly IStationsOverpassApiService _overpassApiService = overpassApiService;
         private readonly AppDbContext _dbContext = dbContext;
-        private readonly ICacheManagerService _cacheManager = cacheManager;
+        private readonly ICacheManagement _cacheManager = cacheManager;
         private readonly ILogger<StationService> _logger = logger;
         private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 

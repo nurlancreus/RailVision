@@ -15,10 +15,24 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3" />
+    <PackageReference Include="osrmnet" Version="6.0.0.34" />
+    <PackageReference Include="QuickGraph" Version="3.6.61119.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RailVision.Application\RailVision.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
   </ItemGroup>
 
 </Project>

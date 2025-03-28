@@ -3,10 +3,10 @@ using RailVision.Application.Abstractions.Cache;
 
 namespace RailVision.Infrastructure.Services.Cache
 {
-    public class CacheManagerService(ICacheManager cacheManager, ILogger<CacheManagerService> logger) : ICacheManagerService
+    public class CacheManagement(ICacheManager cacheManager, ILogger<CacheManagement> logger) : ICacheManagement
     {
         private readonly ICacheManager _cacheManager = cacheManager;
-        private readonly ILogger<CacheManagerService> _logger = logger;
+        private readonly ILogger<CacheManagement> _logger = logger;
 
         public async Task<bool> ClearAllCacheEntriesAsync(CancellationToken cancellationToken = default)
         {

@@ -1,6 +1,6 @@
 ﻿namespace RailVision.Application.Abstractions.Cache
 {
-    public interface ICacheManagerService : ICacheManager
+    public interface ICacheManagement : ICacheManager
     {
     }
 }

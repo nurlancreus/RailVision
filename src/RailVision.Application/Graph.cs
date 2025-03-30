@@ -11,8 +11,6 @@ namespace RailVision.Application
         private readonly IEnumerable<PopulationCenterDTO> _populationCenters;
         private readonly RouteRequestDTO _request;
         private const int DISTANCE_THRESHOLD = 30;
-        private const double ALPHA = 1.0;
-        private const double BETA = 0.01;
 
         public Graph(IEnumerable<StationDTO> stations, IEnumerable<PopulationCenterDTO> populationCenters, RouteRequestDTO request)
         {
@@ -69,12 +67,12 @@ namespace RailVision.Application
 
             foreach (var center in intermediateCenters)
             {
-                var key = $"{center.Name}_{GetKey(center.Coordinate)}";
+                var key = GetKey(center);
                 AddNode(key, center.Coordinate);
             }
 
             var orderedPath = new List<string> { "source" }
-                .Concat(intermediateCenters.Select(center => $"{center.Name}_{GetKey(center.Coordinate)}"))
+                .Concat(intermediateCenters.Select(GetKey))
                 .Concat(new List<string> { "target" })
                 .ToList();
 
@@ -91,11 +89,12 @@ namespace RailVision.Application
                     var toCoord = Nodes[toKey];
 
                     var distance = Algorithms.GetDistance(fromCoord, toCoord);
-                    var fromPop = intermediateCenters.FirstOrDefault(pc => $"{pc.Name}_{GetKey(pc.Coordinate)}" == fromKey)?.Population ?? 0;
-                    var toPop = intermediateCenters.FirstOrDefault(pc => $"{pc.Name}_{GetKey(pc.Coordinate)}" == toKey)?.Population ?? 0;
+                    var fromPop = intermediateCenters.FirstOrDefault(pc => GetKey(pc) == fromKey)?.Population ?? 0;
+                    var toPop = intermediateCenters.FirstOrDefault(pc => GetKey(pc) == toKey)?.Population ?? 0;
 
-                    double normalizedPop = maxPopulation > 0 ? (fromPop + toPop) / 2.0 / maxPopulation : 0;
-                    double weight = ALPHA * distance - BETA * normalizedPop;
+                    double normalizedPop = Algorithms.NormalizePopulation(fromPop, toPop, maxPopulation);
+
+                    double weight = Algorithms.GetWeightByDistanceAndPopulation(distance, normalizedPop);
 
                     if (distance < distanceThreshold)
                     {
@@ -122,7 +121,6 @@ namespace RailVision.Application
             return path;
         }
 
-
         private static bool IsWithinBoundingBox(CoordinateDTO? coord, CoordinateDTO? source, CoordinateDTO? target)
         {
 
@@ -136,11 +134,12 @@ namespace RailVision.Application
                    coord.Longitude <= Math.Max(source.Longitude, target.Longitude);
         }
 
-        private static string GetKey(CoordinateDTO? coord)
+        private static string GetKey(PopulationCenterDTO populationCenter)
         {
-            ArgumentNullException.ThrowIfNull(coord, nameof(coord));
 
-            return $"{coord.Latitude:F6}_{coord.Longitude:F6}";
+            ArgumentNullException.ThrowIfNull(populationCenter.Coordinate, nameof(populationCenter.Coordinate));
+
+            return $"{populationCenter.Name}_{populationCenter.Coordinate.Latitude:F6}_{populationCenter.Coordinate.Longitude:F6}";
         }
     }
 

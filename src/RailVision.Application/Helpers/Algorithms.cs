@@ -4,6 +4,17 @@ namespace RailVision.Application.Helpers
 {
     public static class Algorithms
     {
+        public static double NormalizePopulation(double fromPopulation, double toPopulation, double maxPopulation)
+        {
+            return maxPopulation > 0 ? (fromPopulation + toPopulation) / 2 / maxPopulation : 0;
+        }
+        public static double GetWeightByDistanceAndPopulation(double distance, double population)
+        {
+            const double ALPHA = 1.0;
+            const double BETA = 0.01;
+
+            return ALPHA * distance - BETA * population;
+        }
         public static List<string> Dijkstra(Dictionary<string, List<(string, double)>> graph, string startKey, string endKey)
         {
             var distances = new Dictionary<string, double>();

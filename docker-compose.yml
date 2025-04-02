@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  railvision.webapi:
+    image: ${DOCKER_REGISTRY-}railvisionwebapi
+    build:
+      context: .
+      dockerfile: src/RailVision.WebAPI/Dockerfile
+    depends_on:
+      - sqlserver
+      - redis
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/localhost.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=valverde021
+      - ConnectionStrings__Default=Server=sqlserver;Database=RailVisionDB;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;
+      - RedisCacheOptions__Configuration=redis:6379
+    ports:
+      - "8080:80"  # HTTP
+      - "8081:443"  # HTTPS
+    volumes:
+    - ./certificates/localhost.pfx:/https/localhost.pfx     
+    networks:
+      - railvision-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: "YourStrong!Passw0rd"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    networks:
+      - railvision-network
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - railvision-network
+    volumes:
+      - redis-data:/data
+
+networks:
+  railvision-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  redis-data:

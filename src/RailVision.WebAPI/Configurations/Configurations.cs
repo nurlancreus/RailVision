@@ -48,6 +48,15 @@ namespace RailVision.WebAPI.Configurations
                 options.Level = System.IO.Compression.CompressionLevel.Optimal;
             });
 
+            // Configure Kestrel to use HTTPS
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(5001, listenOptions =>
+                {
+                    listenOptions.UseHttps(); // Enable HTTPS with default developer certificate
+                });
+            });
+
             // Add services to the container.
             builder.Services.AddAuthorization();
 
@@ -71,7 +80,7 @@ namespace RailVision.WebAPI.Configurations
             builder.SetCaching<InMemoryCacheManager>();
 
             // Set Path Finding stragegy
-            builder.SetPathFindingStrategy<AStarPathFinding>();
+            builder.SetPathFindingStrategy<DijkstraPathFinding>();
 
             //Registering the Background service
             builder.Services.AddHostedService<LogCleanupService>();

@@ -1,4 +1,6 @@
-@RailVision.WebAPI_HostAddress = https://localhost:7060
+@RailVision.WebAPI_HostAddress = https://localhost:5001
+// @RailVision.WebAPI_HostAddress = https://localhost:7060
+// @RailVision.WebAPI_HostAddress = http://localhost:32775
 
 ### Railways ENDPOINTS
 
@@ -48,6 +50,14 @@ Accept: application/json
 
 ### Get all population centers data from database
 GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters
+Accept: application/json
+
+### Get all population centers data from database with search query
+GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters?searchQuery=Ba
+Accept: application/json
+
+### Get all population centers data from database with search query and min & max populations
+GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters?searchQuery=Ba&minPopulation=50000&maxPopulation=1000000
 Accept: application/json
 
 ### Get all population centers data from database with min & max populations
@@ -101,13 +111,15 @@ Accept: application/json
 ###
 
 ### Routes ENDPOINTS
-POST {{RailVision.WebAPI_HostAddress}}/api/routes/
-Content-Type: application/json
 
-{
-  "FromStationId": "3072419334",
-  "ToStationId": "333885063"
-}
+### Get optimal route from ids
+GET {{RailVision.WebAPI_HostAddress}}/api/routes?FromId=1117022698&ToId=3129805281
+Accept: application/json
+
+
+### Get optimal route from Coordinates
+GET {{RailVision.WebAPI_HostAddress}}/api/routes?FromLat=40.4093&FromLon=49.8671&ToLat=39.9400&ToLon=48.9300
+Accept: application/json
 
 ###
 
@@ -142,11 +154,11 @@ GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/keys
 Accept: application/json
 
 ### Get value by key from InMemory Cache
-GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllRailways
+GET {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllStations
 Accept: application/json
 
 ### Clear all keys and values from InMemory Cache
 DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory
 
 ### Clear value by key from InMemory Cache
-DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllRailways
+DELETE {{RailVision.WebAPI_HostAddress}}/api/cache/inmemory/GetAllStations

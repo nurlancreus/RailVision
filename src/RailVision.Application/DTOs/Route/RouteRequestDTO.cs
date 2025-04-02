@@ -1,8 +1,13 @@
-﻿namespace RailVision.Application.DTOs.Route
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace RailVision.Application.DTOs.Route
 {
-    public record RouteRequestDTO
+    public record RouteRequestDTO 
     {
-        public long FromStationId { get; set; }
-        public long ToStationId { get; set; }
+        public long? FromId { get; set; }
+        public long? ToId { get; set; }
+
+        public CoordinateDTO? FromCoordinate { get; set; }
+        public CoordinateDTO? ToCoordinate { get; set; }
     }
 }

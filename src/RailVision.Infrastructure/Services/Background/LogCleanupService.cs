@@ -42,7 +42,7 @@ namespace RailVision.Infrastructure.Services.Background
 
                 var _dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-                var sql = "DELETE FROM Logs WHERE TimeStamp < DATEADD(day, -30, GETDATE())";
+                var sql = "DELETE FROM Logs WHERE TimeStamp < DATEADD(day, -1, GETDATE())";
                 var affectedRows = await _dbContext.Database.ExecuteSqlRawAsync(sql, cancellationToken);
 
                 _logger.LogInformation($"{affectedRows} log entries deleted.");

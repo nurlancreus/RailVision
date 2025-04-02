@@ -18,7 +18,7 @@ namespace RailVision.Infrastructure.Services
         public async Task<object> DrawOptimalRouteAsync(RouteRequestDTO request, CancellationToken cancellationToken = default)
         {
             var stations = await _stationService.GetAllAsync(cancellationToken);
-            var populationCenters = await _populationCenterService.GetAllAsync(minPopulation: null, maxPopulation: null, cancellationToken);
+            var populationCenters = await _populationCenterService.GetAllAsync(searchQuery: null, minPopulation: null, maxPopulation: null, cancellationToken);
 
             var graph = new Graph(stations, populationCenters, request);
 

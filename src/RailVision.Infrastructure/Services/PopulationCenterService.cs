@@ -19,15 +19,17 @@ namespace RailVision.Infrastructure.Services
         private readonly ILogger<PopulationCenterService> _logger = logger;
         private readonly TimeSpan AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1);
 
-        public async Task<IEnumerable<PopulationCenterDTO>> GetAllAsync(int? minPopulation, int? maxPopulation, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PopulationCenterDTO>> GetAllAsync(string? searchQuery, int? minPopulation, int? maxPopulation, CancellationToken cancellationToken = default)
         {
             var cacheKey = "GetAllPopulationCenters";
 
-            var cachedPopulationCenters = await _cacheManager.GetCachedDataByKeyAsync<IEnumerable<PopulationCenter>>(cacheKey, cancellationToken);
+            var cachedPopulationCenters = await _cacheManager.GetCachedDataByKeyAsync<List<PopulationCenter>>(cacheKey, cancellationToken);
 
             if (cachedPopulationCenters != null)
             {
-                cachedPopulationCenters = FilterByPopulation(cachedPopulationCenters, minPopulation, maxPopulation).ToList();
+                cachedPopulationCenters = FilterByPopulation(cachedPopulationCenters, minPopulation, maxPopulation);
+
+                cachedPopulationCenters = FilterByQuery(cachedPopulationCenters, searchQuery);
 
                 _logger.LogInformation("Retrieved population centers from cache.");
                 return cachedPopulationCenters.Select(s => s.ToPopulationCenterDTO());
@@ -39,19 +41,28 @@ namespace RailVision.Infrastructure.Services
 
             await _cacheManager.SetDataAsync(cacheKey, populationCenters, absoluteExpirationRelativeToNow: AbsoluteExpirationRelativeToNow, cancellationToken: cancellationToken);
 
-            populationCenters = FilterByPopulation(populationCenters, minPopulation, maxPopulation).ToList();
+            populationCenters = FilterByPopulation(populationCenters, minPopulation, maxPopulation);
+
+            populationCenters = FilterByQuery(populationCenters, searchQuery);
 
             return populationCenters.Select(s => s.ToPopulationCenterDTO());
         }
 
-        private static IEnumerable<PopulationCenter> FilterByPopulation(IEnumerable<PopulationCenter> populationCenters, int? minPopulation, int? maxPopulation)
+        private static List<PopulationCenter> FilterByPopulation(List<PopulationCenter> populationCenters, int? minPopulation, int? maxPopulation)
         {
             if (minPopulation.HasValue && maxPopulation.HasValue)
-                return populationCenters.Where(s => s.Population >= minPopulation.Value && s.Population <= maxPopulation.Value);
-            if (minPopulation.HasValue) return populationCenters.Where(s => s.Population >= minPopulation.Value);
-            if (maxPopulation.HasValue) return populationCenters.Where(s => s.Population <= maxPopulation.Value);
+                return populationCenters.Where(c => c.Population >= minPopulation.Value && c.Population <= maxPopulation.Value).ToList();
+            if (minPopulation.HasValue) return populationCenters.Where(c => c.Population >= minPopulation.Value).ToList();
+            if (maxPopulation.HasValue) return populationCenters.Where(c => c.Population <= maxPopulation.Value).ToList();
 
             return populationCenters;
+        }
+
+        private static List<PopulationCenter> FilterByQuery(List<PopulationCenter> populationCenters, string? searchQuery)
+        {
+            if (string.IsNullOrWhiteSpace(searchQuery)) return populationCenters;
+
+            return populationCenters.Where(c => c.Name.Contains(searchQuery)).ToList();
         }
 
         public async Task<PopulationCenterDTO> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

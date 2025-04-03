@@ -7,15 +7,13 @@ namespace RailVision.Application
 {
     public class Graph
     {
-        private readonly IEnumerable<StationDTO> _stations;
         private readonly IEnumerable<PopulationCenterDTO> _populationCenters;
         private readonly RouteRequestDTO _request;
         private double _distanceThreshold = 1;
         private double _thresholdIncrement = 1;
 
-        public Graph(IEnumerable<StationDTO> stations, IEnumerable<PopulationCenterDTO> populationCenters, RouteRequestDTO request)
+        public Graph(IEnumerable<PopulationCenterDTO> populationCenters, RouteRequestDTO request)
         {
-            _stations = stations;
             _populationCenters = populationCenters;
             _request = request;
 
@@ -107,10 +105,13 @@ namespace RailVision.Application
 
             int maxPopulation = intermediateCenters.Max(pc => pc.Population);
 
+            bool isClose = false;
             if (!dynamic)
             {
                 var routeDistance = Algorithms.GetDistance(sourceCoord, targetCoord);
-                _distanceThreshold = _thresholdIncrement = routeDistance / 10;
+
+                if(routeDistance < 10) isClose = true;
+                else _distanceThreshold = _thresholdIncrement = routeDistance / 10;
             }
 
             var nodeKeys = Nodes.Keys.ToArray();
@@ -134,7 +135,7 @@ namespace RailVision.Application
 
                     double weight = Algorithms.GetWeightByDistanceAndPopulation(distance, normalizedPop);
 
-                    if (distance < _distanceThreshold)
+                    if ((distance < _distanceThreshold) || isClose)
                     {
                         AddEdge(fromKey, toKey, weight);
                     }
@@ -152,7 +153,7 @@ namespace RailVision.Application
                 path = pathfindingStrategy.FindPath(this, "source", "target");
 
                 if (path.Count != 0) break;  // Stop if a path is found
-                _distanceThreshold += _thresholdIncrement; // Increase threshold and retry
+                _distanceThreshold += _thresholdIncrement * 2; // Increase threshold and retry
             }
 
             return path;
@@ -165,10 +166,10 @@ namespace RailVision.Application
             ArgumentNullException.ThrowIfNull(source, nameof(source));
             ArgumentNullException.ThrowIfNull(target, nameof(target));
 
-            return coord.Latitude > Math.Min(source.Latitude, target.Latitude) &&
-                   coord.Latitude < Math.Max(source.Latitude, target.Latitude) &&
-                   coord.Longitude > Math.Min(source.Longitude, target.Longitude) &&
-                   coord.Longitude < Math.Max(source.Longitude, target.Longitude);
+            return coord.Latitude >= Math.Min(source.Latitude, target.Latitude) &&
+                   coord.Latitude <= Math.Max(source.Latitude, target.Latitude) &&
+                   coord.Longitude >= Math.Min(source.Longitude, target.Longitude) &&
+                   coord.Longitude <= Math.Max(source.Longitude, target.Longitude);
         }
 
         private static string GetKey(PopulationCenterDTO populationCenter)

@@ -20,7 +20,7 @@ namespace RailVision.Infrastructure.Services
             var stations = await _stationService.GetAllAsync(cancellationToken);
             var populationCenters = await _populationCenterService.GetAllAsync(searchQuery: null, minPopulation: null, maxPopulation: null, cancellationToken);
 
-            var graph = new Graph(stations, populationCenters, request);
+            var graph = new Graph(populationCenters, request);
 
             var path = graph.FindRouteWithDynamicThreshold(_pathfindingStrategy);
 

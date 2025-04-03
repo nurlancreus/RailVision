@@ -1,5 +1,5 @@
-@RailVision.WebAPI_HostAddress = https://localhost:5001
-// @RailVision.WebAPI_HostAddress = https://localhost:7060
+//@RailVision.WebAPI_HostAddress = https://localhost:5001
+@RailVision.WebAPI_HostAddress = https://localhost:7060
 // @RailVision.WebAPI_HostAddress = http://localhost:32775
 
 ### Railways ENDPOINTS
@@ -53,7 +53,7 @@ GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters
 Accept: application/json
 
 ### Get all population centers data from database with search query
-GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters?searchQuery=Ba
+GET {{RailVision.WebAPI_HostAddress}}/api/populationcenters?searchQuery=Bak
 Accept: application/json
 
 ### Get all population centers data from database with search query and min & max populations

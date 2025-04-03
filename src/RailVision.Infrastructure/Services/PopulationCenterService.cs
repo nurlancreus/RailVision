@@ -62,7 +62,7 @@ namespace RailVision.Infrastructure.Services
         {
             if (string.IsNullOrWhiteSpace(searchQuery)) return populationCenters;
 
-            return populationCenters.Where(c => c.Name.Contains(searchQuery)).ToList();
+            return populationCenters.Where(c => c.Name.Contains(searchQuery, StringComparison.CurrentCultureIgnoreCase)).ToList();
         }
 
         public async Task<PopulationCenterDTO> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)

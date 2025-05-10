@@ -1,7 +1,9 @@
-﻿namespace RailVision.Application.Abstractions.PathFinding
+﻿using Microsoft.AspNetCore.Hosting;
+
+namespace RailVision.Application.Abstractions.PathFinding
 {
     public interface IPathFindingStrategy
     {
-        List<string> FindPath(Graph graph, string startKey, string endKey);
+        List<(string node, double distance)> FindPath(Graph graph, string startKey, string endKey, IWebHostEnvironment webHostEnvironment);
     }
 }

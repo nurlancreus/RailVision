@@ -1,7 +1,11 @@
-﻿using RailVision.Application.Abstractions.PathFinding;
+﻿using Microsoft.AspNetCore.Hosting;
+using NetTopologySuite.Geometries;
+using RailVision.Application.Abstractions.PathFinding;
 using RailVision.Application.DTOs;
 using RailVision.Application.DTOs.Route;
 using RailVision.Application.Helpers;
+using RailVision.Domain;
+using RailVision.Domain.Exceptions;
 
 namespace RailVision.Application
 {
@@ -16,31 +20,23 @@ namespace RailVision.Application
         {
             _populationCenters = populationCenters;
             _request = request;
-
             Build();
         }
 
-        public Dictionary<string, CoordinateDTO> Nodes { get; } = [];
-        public Dictionary<string, List<(string, double)>> Edges { get; } = [];
+        public Dictionary<string, Coordinate> Nodes { get; } = [];
+        public Dictionary<string, List<(string neighbor, double weight, double distance)>> Edges { get; } = [];
 
-        public void AddNode(string key, CoordinateDTO? coord)
+        public void AddNode(string key, Coordinate? coord)
         {
             ArgumentNullException.ThrowIfNull(coord, nameof(coord));
-
-            if (!Nodes.ContainsKey(key))
-            {
-                Nodes[key] = coord;
-                Edges[key] = [];
-            }
+            if (!Nodes.ContainsKey(key)) Nodes[key] = coord;
+            if (!Edges.ContainsKey(key)) Edges[key] = [];
         }
 
-        public void AddEdge(string from, string to, double weight)
+        public void AddEdge(string from, string to, double weight, double distance)
         {
-            if (!Edges.ContainsKey(from)) Edges[from] = [];
-            if (!Edges.ContainsKey(to)) Edges[to] = [];
-
-            Edges[from].Add((to, weight));
-            Edges[to].Add((from, weight));
+            Edges[from].Add((to, weight, distance));
+            Edges[to].Add((from, weight, distance));
         }
 
         private void Build(bool dynamic = false)
@@ -48,71 +44,68 @@ namespace RailVision.Application
             Nodes.Clear();
             Edges.Clear();
 
-            CoordinateDTO? sourceCoord = null;
-            CoordinateDTO? targetCoord = null;
+            Coordinate? sourceCoord = null;
+            Coordinate? targetCoord = null;
 
             if (_request.FromId != null && _request.ToId != null)
             {
                 var start = _populationCenters.FirstOrDefault(s => s.ElementId == _request.FromId);
-
                 var end = _populationCenters.FirstOrDefault(s => s.ElementId == _request.ToId);
+                if (start == null || end == null || start.Coordinate == null || end.Coordinate == null) throw new Exception("Invalid ID");
 
-                if (start == null || end == null) throw new Exception("Invalid ID");
-
-                sourceCoord = start.Coordinate;
-                targetCoord = end.Coordinate;
+                sourceCoord = new Coordinate { X = start.Coordinate.Longitude, Y = start.Coordinate.Latitude };
+                targetCoord = new Coordinate { X = end.Coordinate.Longitude, Y = end.Coordinate.Latitude };
             }
             else if (_request.FromCoordinate != null && _request.ToCoordinate != null)
             {
-                sourceCoord = _request.FromCoordinate;
-                targetCoord = _request.ToCoordinate;
+                sourceCoord = new Coordinate { X = _request.FromCoordinate.Longitude, Y = _request.FromCoordinate.Latitude };
+                targetCoord = new Coordinate { X = _request.ToCoordinate.Longitude, Y = _request.ToCoordinate.Latitude };
             }
-
-            //var sourceCoord = new CoordinateDTO
-            //{
-            //    Latitude = 40.4615983,
-            //    Longitude = 49.9214189
-            //};
-
-            //var targetCoord = new CoordinateDTO
-            //{
-            //    Latitude = 40.14202,
-            //    Longitude = 48.07276
-            //};
-
-            // var sourceCoord = startStation.Coordinate;
-            // var targetCoord = endStation.Coordinate;
-
-            var intermediateCenters = _populationCenters
-                .Where(pc => IsWithinBoundingBox(pc.Coordinate, sourceCoord, targetCoord))
-                .OrderBy(pc => Algorithms.GetDistance(sourceCoord, pc.Coordinate))
-                .ThenBy(pc => Algorithms.GetDistance(targetCoord, pc.Coordinate))
-                .ToList();
-
-            AddNode("source", sourceCoord);
-            AddNode("target", targetCoord);
-
-            foreach (var center in intermediateCenters)
+            else
             {
-                var key = GetKey(center);
-                AddNode(key, center.Coordinate);
+                throw new AppException("Invalid coordinates");
             }
 
-            //var orderedPath = new List<string> { "source" }
-            //    .Concat(intermediateCenters.Select(GetKey))
-            //    .Concat(new List<string> { "target" })
-            //    .ToList();
+            if (sourceCoord.Equals2D(targetCoord))
+                throw new SameCoordinateException("Source and target coordinates are the same.");
 
-            int maxPopulation = intermediateCenters.Max(pc => pc.Population);
+            AddNode(Constants.SourceNode, sourceCoord);
+            AddNode(Constants.TargetNode, targetCoord);
 
             bool isClose = false;
             if (!dynamic)
             {
+                const byte CLOSE_DISTANCE = 10; // km
                 var routeDistance = Algorithms.GetDistance(sourceCoord, targetCoord);
+                if (routeDistance < CLOSE_DISTANCE) isClose = true;
 
-                if(routeDistance < 10) isClose = true;
-                else _distanceThreshold = _thresholdIncrement = routeDistance / 10;
+
+                else
+                {
+                    _distanceThreshold = _thresholdIncrement = CalculateThreshhold(routeDistance);
+                }
             }
+
+            const int POPULATION_THRESHOLD = 5000;
+
+            var intermediateCenters = _populationCenters
+                .Where(pc => pc.Population > POPULATION_THRESHOLD && IsWithinBoundingBox(pc.Coordinate, sourceCoord, targetCoord, _distanceThreshold))
+                .ToList();
+
+            foreach (var center in intermediateCenters)
+            {
+                var key = GetKey(center);
+                AddNode(key, new Coordinate
+                {
+                    X = center.Coordinate?.Longitude ?? 0,
+                    Y = center.Coordinate?.Latitude ?? 0
+                });
+            }
+
+            int maxPopulation = intermediateCenters.Count != 0 ? intermediateCenters.Max(pc => pc.Population) : 1;
+
+            var keyPopMap = intermediateCenters
+                .ToDictionary(GetKey, g => g.Population);
 
             var nodeKeys = Nodes.Keys.ToArray();
 
@@ -128,57 +121,84 @@ namespace RailVision.Application
 
                     var distance = Algorithms.GetDistance(fromCoord, toCoord);
 
-                    var fromPop = intermediateCenters.FirstOrDefault(pc => GetKey(pc) == fromKey)?.Population ?? 0;
-                    var toPop = intermediateCenters.FirstOrDefault(pc => GetKey(pc) == toKey)?.Population ?? 0;
+                    if (distance > _distanceThreshold && !isClose) continue;
 
+                    var fromPop = keyPopMap.GetValueOrDefault(fromKey, 0);
+                    var toPop = keyPopMap.GetValueOrDefault(toKey, 0);
                     double normalizedPop = Algorithms.NormalizePopulation(fromPop, toPop, maxPopulation);
+                    double weight = Algorithms.GetWeightFromDistanceAndPopulation(distance, normalizedPop);
 
-                    double weight = Algorithms.GetWeightByDistanceAndPopulation(distance, normalizedPop);
-
-                    if ((distance < _distanceThreshold) || isClose)
-                    {
-                        AddEdge(fromKey, toKey, weight);
-                    }
+                    AddEdge(fromKey, toKey, weight, distance);
                 }
             }
         }
 
-        public List<string> FindRouteWithDynamicThreshold(IPathFindingStrategy pathfindingStrategy, double maxThresholdLimit = 200)
+        private static double CalculateThreshhold(double distanceBetweenSourceAndTarget)
         {
-            List<string> path = [];
+            const int FAR_DISTANCE = 250; // km
+            const int MIDDLE_DISTANCE = 200; // km
+
+            if (distanceBetweenSourceAndTarget > FAR_DISTANCE)
+                return distanceBetweenSourceAndTarget / 15;
+            else if (distanceBetweenSourceAndTarget > MIDDLE_DISTANCE)
+                return distanceBetweenSourceAndTarget / 10;
+
+            return distanceBetweenSourceAndTarget / 5;
+        }
+
+        public List<(string node, double distance)> FindRouteWithDynamicThreshold(IPathFindingStrategy pathfindingStrategy, IWebHostEnvironment webHostEnvironment, double maxThresholdLimit = 200)
+        {
+            List<(string node, double distance)> path = [];
 
             while (_distanceThreshold <= maxThresholdLimit)
             {
                 Build(true);
-                path = pathfindingStrategy.FindPath(this, "source", "target");
-
-                if (path.Count != 0) break;  // Stop if a path is found
-                _distanceThreshold += _thresholdIncrement * 2; // Increase threshold and retry
+                path = pathfindingStrategy.FindPath(this, Constants.SourceNode, Constants.TargetNode, webHostEnvironment);
+                if (path.Count != 0) break;
+                _distanceThreshold += _thresholdIncrement * 2;
             }
 
             return path;
         }
 
-        private static bool IsWithinBoundingBox(CoordinateDTO? coord, CoordinateDTO? source, CoordinateDTO? target)
+        //private static bool IsWithinBoundingBox(CoordinateDTO? coord, Coordinate? source, Coordinate? target, double bufferKm = 5.0)
+        //{
+        //    ArgumentNullException.ThrowIfNull(coord);
+        //    ArgumentNullException.ThrowIfNull(source);
+        //    ArgumentNullException.ThrowIfNull(target);
+
+        //    double bufferDeg = bufferKm * 0.009;
+
+        //    bool withinLat = coord.Latitude >= Math.Min(source.Y, target.Y) - bufferDeg &&
+        //                     coord.Latitude <= Math.Max(source.Y, target.Y) + bufferDeg;
+
+        //    bool withinLon = coord.Longitude >= Math.Min(source.X, target.X) - bufferDeg &&
+        //                     coord.Longitude <= Math.Max(source.X, target.X) + bufferDeg;
+
+        //    return withinLat && withinLon;
+        //}
+
+        private static bool IsWithinBoundingBox(CoordinateDTO? coord, Coordinate? sourceCoord, Coordinate? targetCoord, double bufferKm = 10)
         {
+            ArgumentNullException.ThrowIfNull(coord);
+            ArgumentNullException.ThrowIfNull(sourceCoord);
+            ArgumentNullException.ThrowIfNull(targetCoord);
 
-            ArgumentNullException.ThrowIfNull(coord, nameof(coord));
-            ArgumentNullException.ThrowIfNull(source, nameof(source));
-            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            // Rough conversion: 1 km ≈ 0.009 degrees
+            const double KM_IN_DEGREE = 0.009;
 
-            return coord.Latitude >= Math.Min(source.Latitude, target.Latitude) &&
-                   coord.Latitude <= Math.Max(source.Latitude, target.Latitude) &&
-                   coord.Longitude >= Math.Min(source.Longitude, target.Longitude) &&
-                   coord.Longitude <= Math.Max(source.Longitude, target.Longitude);
+            double bufferDeg = bufferKm * KM_IN_DEGREE;
+
+            var envelope = new Envelope(
+                Math.Min(sourceCoord.X, targetCoord.X) - bufferDeg,
+                Math.Max(sourceCoord.X, targetCoord.X) + bufferDeg,
+                Math.Min(sourceCoord.Y, targetCoord.Y) - bufferDeg,
+                Math.Max(sourceCoord.Y, targetCoord.Y) + bufferDeg
+            );
+
+            return envelope.Contains(new Coordinate(coord.Longitude, coord.Latitude));
         }
 
-        private static string GetKey(PopulationCenterDTO populationCenter)
-        {
-
-            ArgumentNullException.ThrowIfNull(populationCenter.Coordinate, nameof(populationCenter.Coordinate));
-
-            return $"{populationCenter.Name}_{populationCenter.Coordinate.Latitude:F6}_{populationCenter.Coordinate.Longitude:F6}";
-        }
+        private static string GetKey(PopulationCenterDTO populationCenter) => populationCenter.Name;
     }
-
 }

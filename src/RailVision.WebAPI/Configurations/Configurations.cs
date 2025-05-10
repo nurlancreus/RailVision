@@ -11,6 +11,7 @@ using RailVision.Infrastructure.Services.Cache.Redis;
 using RailVision.Infrastructure.Services.PathFinding;
 using RailVision.WebAPI.Middlewares;
 using Serilog;
+using System.Text.Json.Serialization;
 
 namespace RailVision.WebAPI.Configurations
 {
@@ -19,6 +20,12 @@ namespace RailVision.WebAPI.Configurations
         public static void RegisterServices(this WebApplicationBuilder builder)
         {
             builder.Configuration.ConfigureEnvironments<Program>(builder.Environment);
+
+            // Configure JsonOptions
+            builder.Services.Configure<JsonOptions>(options =>
+            {
+                options.JsonSerializerOptions.NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals;
+            });
 
             // Registering HttpClient with a custom timeout and Automatic GZIP Handling
             builder.Services.AddHttpClient("OverpassClient", client =>
@@ -141,6 +148,7 @@ namespace RailVision.WebAPI.Configurations
             app.UseHttpLogging();
 
             app.UseHttpsRedirection();
+
             app.UseResponseCaching();
 
             app.UseCustomResponseCachingMiddleware();

@@ -1,5 +1,5 @@
-//@RailVision.WebAPI_HostAddress = https://localhost:5001
-@RailVision.WebAPI_HostAddress = https://localhost:7060
+@RailVision.WebAPI_HostAddress = https://localhost:5001
+//@RailVision.WebAPI_HostAddress = https://localhost:7060
 // @RailVision.WebAPI_HostAddress = http://localhost:32775
 
 ### Railways ENDPOINTS
@@ -113,7 +113,7 @@ Accept: application/json
 ### Routes ENDPOINTS
 
 ### Get optimal route from ids
-GET {{RailVision.WebAPI_HostAddress}}/api/routes?FromId=1117022698&ToId=3129805281
+GET {{RailVision.WebAPI_HostAddress}}/api/routes?FromId=2117350415&ToId=234298960
 Accept: application/json
 
 

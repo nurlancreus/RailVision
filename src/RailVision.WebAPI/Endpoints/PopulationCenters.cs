@@ -16,9 +16,9 @@ namespace RailVision.WebAPI.Endpoints
                 return Results.Ok(response);
             });
 
-            populationCenters.MapGet("", async (IPopulationCenterService populationCenterService, [FromQuery] string? searchQuery, [FromQuery] int? minPopulation, [FromQuery] int? maxPopulation, CancellationToken cancellationToken) =>
+            populationCenters.MapGet("", async (IPopulationCenterService populationCenterService, [FromQuery] string? searchQuery, [FromQuery] int? minPopulation, [FromQuery] int? maxPopulation, CancellationToken cancellationToken, bool? isDistinct = true) =>
             {
-                var response = await populationCenterService.GetAllAsync(searchQuery, minPopulation, maxPopulation, cancellationToken);
+                var response = await populationCenterService.GetAllAsync(searchQuery, minPopulation, maxPopulation, isDistinct, cancellationToken);
 
                 return Results.Ok(response);
             });

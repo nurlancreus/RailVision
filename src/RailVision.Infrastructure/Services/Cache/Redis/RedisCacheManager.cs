@@ -15,7 +15,8 @@ namespace RailVision.Infrastructure.Services.Cache.Redis
         private readonly IConfiguration _configuration = configuration;
         private readonly JsonSerializerOptions jsonSerializerOptions = new()
         {
-            ReferenceHandler = ReferenceHandler.Preserve
+            ReferenceHandler = ReferenceHandler.Preserve,
+            NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
         };
 
         public async Task<bool> ClearAllCacheEntriesAsync(CancellationToken cancellationToken = default)

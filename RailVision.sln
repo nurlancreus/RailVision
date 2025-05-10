@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RailVision.Application", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RailVision.Infrastructure", "src\RailVision.Infrastructure\RailVision.Infrastructure.csproj", "{C1C2E9AA-67F8-4B22-9C35-65B33C0F22CD}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{A34C14D2-BAE0-4AE6-8154-41FA4935DC70}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,10 +35,6 @@ Global
 		{C1C2E9AA-67F8-4B22-9C35-65B33C0F22CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1C2E9AA-67F8-4B22-9C35-65B33C0F22CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1C2E9AA-67F8-4B22-9C35-65B33C0F22CD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A34C14D2-BAE0-4AE6-8154-41FA4935DC70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A34C14D2-BAE0-4AE6-8154-41FA4935DC70}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A34C14D2-BAE0-4AE6-8154-41FA4935DC70}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A34C14D2-BAE0-4AE6-8154-41FA4935DC70}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

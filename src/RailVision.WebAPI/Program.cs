@@ -23,6 +23,8 @@ namespace RailVision.WebAPI
 
             app.UseMiddlewares();
 
+            app.MapGet("/", () => "Hello");
+
             app.RegisterRailwaysEndpoints()
                .RegisterPopulationCentersEndpoints()
                .RegisterStationsEndpoints()

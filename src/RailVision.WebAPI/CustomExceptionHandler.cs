@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using RailVision.Domain.Exceptions;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Mime;
 
@@ -47,6 +48,7 @@ namespace RailVision.WebAPI
 
             statusCode = exception switch
             {
+                AppException => (int)((AppException)exception).StatusCode,
                 ValidationException => StatusCodes.Status400BadRequest,
                 UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                 KeyNotFoundException => StatusCodes.Status404NotFound,

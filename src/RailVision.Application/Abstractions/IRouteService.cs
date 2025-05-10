@@ -4,6 +4,6 @@ namespace RailVision.Application.Abstractions
 {
     public interface IRouteService
     {
-        Task<object> DrawOptimalRouteAsync(RouteRequestDTO request, CancellationToken cancellationToken = default);
+        Task<RouteResponseDTO> DrawOptimalRouteAsync(RouteRequestDTO request, CancellationToken cancellationToken = default);
     }
 }

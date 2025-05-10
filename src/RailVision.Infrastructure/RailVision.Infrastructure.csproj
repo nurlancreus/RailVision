@@ -7,30 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EFCore.BulkExtensions" Version="9.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
+    <PackageReference Include="EFCore.BulkExtensions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RailVision.Application\RailVision.Application.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="C:\Users\ASUS\.nuget\packages\osrmnet\6.0.0.34\build\net6.0\..\..\lib\native\Ijwhost.dll" />
   </ItemGroup>
 
 </Project>

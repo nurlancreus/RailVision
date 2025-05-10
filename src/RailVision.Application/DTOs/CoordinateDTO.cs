@@ -19,5 +19,10 @@
         {
             return HashCode.Combine(Latitude, Longitude);
         }
+
+        public override string ToString()
+        {
+            return $"{Latitude:F6}_{Longitude:F6}";
+        }
     }
 }

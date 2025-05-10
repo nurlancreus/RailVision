@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using RailVision.Application.Abstractions.Cache;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -12,7 +11,8 @@ namespace RailVision.Infrastructure.Services.Cache.InMemory
         private readonly IMemoryCache _cache = cache;
         private readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
-            ReferenceHandler = ReferenceHandler.Preserve
+            ReferenceHandler = ReferenceHandler.Preserve,
+            NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
         };
 
         public Task<bool> ClearAllCacheEntriesAsync(CancellationToken cancellationToken = default)
@@ -38,7 +38,7 @@ namespace RailVision.Infrastructure.Services.Cache.InMemory
         {
             if (_cache is MemoryCache memoryCache)
                 return memoryCache.Keys.Select(k => k.ToString() ?? string.Empty);
-            
+
             return [];
         }
 
